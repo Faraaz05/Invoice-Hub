@@ -1,0 +1,212 @@
+import { useState } from 'react';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Receipt, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/auth';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required')
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+const demoCredentials = [
+  { role: 'Clerk', email: 'clerk@demo.com', password: 'pass' },
+  { role: 'Manager', email: 'manager@demo.com', password: 'pass' },
+  { role: 'Controller', email: 'controller@demo.com', password: 'pass' }
+];
+
+export default function Login() {
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, isAuthenticated, user } = useAuthStore();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  });
+
+  if (isAuthenticated) {
+    const from = location.state?.from?.pathname || getDefaultRoute(user?.role);
+    return <Navigate to={from} replace />;
+  }
+
+  const handleSubmit = async (data: LoginFormData) => {
+    try {
+      const success = await login(data.email, data.password);
+      
+      if (success) {
+        toast({
+          title: 'Welcome back!',
+          description: 'You have been successfully logged in.'
+        });
+        
+        const from = location.state?.from?.pathname || getDefaultRoute(user?.role);
+        navigate(from, { replace: true });
+      } else {
+        toast({
+          title: 'Login failed',
+          description: 'Invalid email or password. Please try again.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Login error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDemoLogin = (credentials: typeof demoCredentials[0]) => {
+    form.setValue('email', credentials.email);
+    form.setValue('password', credentials.password);
+    form.handleSubmit(handleSubmit)();
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Receipt className="h-6 w-6" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold">InvoiceHub</h1>
+          <p className="text-muted-foreground">Enterprise Invoice Management</p>
+        </div>
+
+        <Card className="shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">Sign in to your account</CardTitle>
+            <CardDescription>
+              Enter your credentials to access the dashboard
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="user@company.com"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="••••••••"
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+
+          <CardFooter>
+            <div className="w-full space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Demo accounts
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                {demoCredentials.map((cred) => (
+                  <Button
+                    key={cred.role}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDemoLogin(cred)}
+                    className="text-xs"
+                  >
+                    Login as {cred.role}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function getDefaultRoute(role?: string) {
+  switch (role) {
+    case 'clerk':
+      return '/invoices/new';
+    case 'manager':
+      return '/approvals';
+    case 'controller':
+      return '/dashboard';
+    default:
+      return '/';
+  }
+}
