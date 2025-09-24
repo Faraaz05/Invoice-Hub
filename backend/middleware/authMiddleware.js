@@ -80,9 +80,22 @@ const controllerOrHigher = (req, res, next) => {
   }
 };
 
+// Clerk or higher middleware (for editing invoices)
+const clerkOrHigher = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'manager' || req.user.role === 'controller' || req.user.role === 'clerk')) {
+    next();
+  } else {
+    res.status(403).json({
+      success: false,
+      message: 'Access denied. Clerk privileges or higher required.'
+    });
+  }
+};
+
 module.exports = {
   protect,
   adminOnly,
   managerOrHigher,
-  controllerOrHigher
+  controllerOrHigher,
+  clerkOrHigher
 };

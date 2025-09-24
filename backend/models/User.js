@@ -31,12 +31,20 @@ const userSchema = new mongoose.Schema({
     },
     required: [true, 'Role is required'],
     default: 'clerk'
+  },
+  department: {
+    type: String,
+    enum: {
+      values: ['Sales', 'Marketing', 'Operations', 'Finance', 'HR', 'IT', 'Procurement', 'Legal'],
+      message: 'Department must be one of: Sales, Marketing, Operations, Finance, HR, IT, Procurement, Legal'
+    },
+    required: function() {
+      return this.role === 'manager';
+    },
+    trim: true
   }
 }, {
   timestamps: true
 });
-
-// Index for email lookup
-userSchema.index({ email: 1 });
 
 module.exports = mongoose.model('User', userSchema);

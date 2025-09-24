@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceHub API Tester</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        
+        .auth-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .endpoint-section {
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .endpoint-header {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .method {
+            background: #2c3e50;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .endpoint-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .endpoint-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: #27ae60;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #229954;
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .response pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .error {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+        
+        .success {
+            border-left-color: #27ae60;
+            background: #f0f9f0;
+        }
+        
+        .token-display {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>InvoiceHub API Tester</h1>
+        
+        <!-- Authentication Section -->
+        <div class="auth-section">
+            <h2>Authentication</h2>
+            <div class="form-group">
+                <label>Base URL:</label>
+                <input type="text" id="baseUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+            </div>
+            <div class="form-group">
+                <label>Auth Token:</label>
+                <input type="text" id="authToken" placeholder="JWT token will appear here after login">
+            </div>
+            <div id="tokenDisplay" class="token-display" style="display: none;"></div>
+        </div>
+
+        <!-- Health Check -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/health - Health Check</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <button onclick="testHealthCheck()">Test Health Check</button>
+                <div id="healthResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Auth: Login -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/auth/login - User Login</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" value="admin@invoicehub.com" placeholder="admin@invoicehub.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" value="admin123" placeholder="admin123">
+                </div>
+                <button onclick="testLogin()">Login</button>
+                <div id="loginResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Auth: Register -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/auth/register - Register User (Admin Only)</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="registerName" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="registerEmail" placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="registerPassword" placeholder="password123">
+                </div>
+                <div class="form-group">
+                    <label>Role:</label>
+                    <select id="registerRole" onchange="toggleDepartmentField()">
+                        <option value="clerk">Clerk</option>
+                        <option value="manager">Manager</option>
+                        <option value="controller">Controller</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group" id="departmentGroup" style="display: none;">
+                    <label>Department (Required for Manager):</label>
+                    <select id="registerDepartment">
+                        <option value="">Select Department</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Finance">Finance</option>
+                        <option value="HR">HR</option>
+                        <option value="IT">IT</option>
+                        <option value="Procurement">Procurement</option>
+                        <option value="Legal">Legal</option>
+                    </select>
+                </div>
+                <button onclick="testRegister()">Register User</button>
+                <div id="registerResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Auth: Profile -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/auth/profile - Get User Profile</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <button onclick="testProfile()">Get Profile</button>
+                <div id="profileResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Auth: Get Managers -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/auth/managers - Get Managers by Department</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <button onclick="testGetManagers()">Get Managers</button>
+                <div id="managersResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Dashboard Stats -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/invoices/dashboard/stats - Dashboard Statistics</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <button onclick="testDashboardStats()">Get Dashboard Stats</button>
+                <div id="dashboardResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Upload -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/invoices/upload - Upload Invoice File</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice File:</label>
+                    <input type="file" id="invoiceFile" accept=".pdf,.jpg,.jpeg,.png,.txt">
+                </div>
+                <div class="form-group">
+                    <label>Department:</label>
+                    <select id="uploadDepartment" required>
+                        <option value="">Select Department</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Finance">Finance</option>
+                        <option value="HR">HR</option>
+                        <option value="IT">IT</option>
+                        <option value="Procurement">Procurement</option>
+                        <option value="Legal">Legal</option>
+                    </select>
+                </div>
+                <button onclick="testUploadInvoice()">Upload Invoice</button>
+                <div id="uploadResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Preview -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/invoices/preview - Preview Invoice (No Save)</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice File for Preview:</label>
+                    <input type="file" id="previewFile" accept=".pdf,.jpg,.jpeg,.png,.txt">
+                </div>
+                <button onclick="testPreviewInvoice()">Preview Invoice</button>
+                <div id="previewResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Save Confirmed -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/invoices/save-confirmed - Save Confirmed Invoice</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice Data (JSON):</label>
+                    <textarea id="saveConfirmedData" placeholder='{"invoiceNumber": "INV-001", "invoiceDate": "2024-01-01", ...}'></textarea>
+                </div>
+                <button onclick="testSaveConfirmed()">Save Confirmed Invoice</button>
+                <div id="saveConfirmedResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Get All -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/invoices - Get All Invoices</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Page:</label>
+                    <input type="number" id="invoicesPage" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Limit:</label>
+                    <input type="number" id="invoicesLimit" value="10" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Status Filter:</label>
+                    <select id="invoicesStatus">
+                        <option value="">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Vendor Filter:</label>
+                    <input type="text" id="invoicesVendor" placeholder="Vendor name">
+                </div>
+                <button onclick="testGetAllInvoices()">Get All Invoices</button>
+                <div id="getAllInvoicesResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Get By ID -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/invoices/:id - Get Invoice By ID</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice ID:</label>
+                    <input type="text" id="getInvoiceId" placeholder="Enter invoice ID">
+                </div>
+                <button onclick="testGetInvoiceById()">Get Invoice</button>
+                <div id="getInvoiceResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Update -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">PUT</span> /api/invoices/:id - Update Invoice</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice ID:</label>
+                    <input type="text" id="updateInvoiceId" placeholder="Enter invoice ID">
+                </div>
+                <div class="form-group">
+                    <label>Update Data (JSON):</label>
+                    <textarea id="updateInvoiceData" placeholder='{"invoiceNumber": "INV-001-UPDATED", ...}'></textarea>
+                </div>
+                <button onclick="testUpdateInvoice()">Update Invoice</button>
+                <div id="updateInvoiceResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Approve/Reject -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/invoices/:id/approve-reject - Approve/Reject Invoice</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice ID:</label>
+                    <input type="text" id="approveInvoiceId" placeholder="Enter invoice ID">
+                </div>
+                <div class="form-group">
+                    <label>Action:</label>
+                    <select id="approveAction">
+                        <option value="approved">Approve</option>
+                        <option value="rejected">Reject</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comments:</label>
+                    <textarea id="approveComments" placeholder="Optional comments"></textarea>
+                </div>
+                <button onclick="testApproveReject()">Submit Decision</button>
+                <div id="approveRejectResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Mark as Paid -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">POST</span> /api/invoices/:id/mark-paid - Mark Invoice as Paid</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice ID:</label>
+                    <input type="text" id="paidInvoiceId" placeholder="Enter invoice ID">
+                </div>
+                <div class="form-group">
+                    <label>Payment Date:</label>
+                    <input type="date" id="paymentDate">
+                </div>
+                <div class="form-group">
+                    <label>Payment Reference:</label>
+                    <input type="text" id="paymentReference" placeholder="Payment reference/transaction ID">
+                </div>
+                <button onclick="testMarkAsPaid()">Mark as Paid</button>
+                <div id="markPaidResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Invoice: Get File -->
+        <div class="endpoint-section">
+            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                <span><span class="method">GET</span> /api/invoices/:id/file - Get Invoice File</span>
+                <span>▼</span>
+            </div>
+            <div class="endpoint-content">
+                <div class="form-group">
+                    <label>Invoice ID:</label>
+                    <input type="text" id="fileInvoiceId" placeholder="Enter invoice ID">
+                </div>
+                <button onclick="testGetInvoiceFile()">Get Invoice File</button>
+                <div id="getFileResponse" class="response" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+
+        function toggleEndpoint(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('span:last-child');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('active');
+                arrow.textContent = '▲';
+            }
+        }
+
+        function updateAuthToken(token) {
+            currentToken = token;
+            document.getElementById('authToken').value = token;
+            const tokenDisplay = document.getElementById('tokenDisplay');
+            tokenDisplay.textContent = `Current Token: ${token.substring(0, 50)}...`;
+            tokenDisplay.style.display = 'block';
+        }
+
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value.trim() || 'http://localhost:5000';
+        }
+
+        function getAuthHeaders() {
+            const token = document.getElementById('authToken').value.trim() || currentToken;
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        function displayResponse(elementId, response, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response ${isError ? 'error' : 'success'}`;
+            element.innerHTML = `<pre>${JSON.stringify(response, null, 2)}</pre>`;
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders(),
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                return { data, status: response.status, ok: response.ok };
+            } catch (error) {
+                return { error: error.message, status: 0, ok: false };
+            }
+        }
+
+        // Test Functions
+        async function testHealthCheck() {
+            const result = await makeRequest(`${getBaseUrl()}/api/health`);
+            displayResponse('healthResponse', result, !result.ok);
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/auth/login`, {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            
+            if (result.ok && result.data.data && result.data.data.token) {
+                updateAuthToken(result.data.data.token);
+            }
+            
+            displayResponse('loginResponse', result, !result.ok);
+        }
+
+        function toggleDepartmentField() {
+            const role = document.getElementById('registerRole').value;
+            const departmentGroup = document.getElementById('departmentGroup');
+            
+            if (role === 'manager') {
+                departmentGroup.style.display = 'block';
+            } else {
+                departmentGroup.style.display = 'none';
+            }
+        }
+
+        async function testRegister() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const role = document.getElementById('registerRole').value;
+            const department = document.getElementById('registerDepartment').value;
+            
+            const requestBody = { name, email, password, role };
+            
+            // Add department for managers
+            if (role === 'manager') {
+                if (!department) {
+                    displayResponse('registerResponse', { error: 'Department is required for manager role' }, true);
+                    return;
+                }
+                requestBody.department = department;
+            }
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/auth/register`, {
+                method: 'POST',
+                body: JSON.stringify(requestBody)
+            });
+            
+            displayResponse('registerResponse', result, !result.ok);
+        }
+
+        async function testGetManagers() {
+            const result = await makeRequest(`${getBaseUrl()}/api/auth/managers`);
+            displayResponse('managersResponse', result, !result.ok);
+        }
+
+        async function testProfile() {
+            const result = await makeRequest(`${getBaseUrl()}/api/auth/profile`);
+            displayResponse('profileResponse', result, !result.ok);
+        }
+
+        async function testDashboardStats() {
+            const result = await makeRequest(`${getBaseUrl()}/api/invoices/dashboard/stats`);
+            displayResponse('dashboardResponse', result, !result.ok);
+        }
+
+        async function testUploadInvoice() {
+            const fileInput = document.getElementById('invoiceFile');
+            const file = fileInput.files[0];
+            const department = document.getElementById('uploadDepartment').value;
+            
+            if (!file) {
+                displayResponse('uploadResponse', { error: 'Please select a file' }, true);
+                return;
+            }
+
+            if (!department) {
+                displayResponse('uploadResponse', { error: 'Please select a department' }, true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('invoice', file);
+            formData.append('department', department);
+
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/invoices/upload`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: formData
+                });
+
+                const data = await response.json();
+                displayResponse('uploadResponse', { data, status: response.status }, !response.ok);
+            } catch (error) {
+                displayResponse('uploadResponse', { error: error.message }, true);
+            }
+        }
+
+        async function testPreviewInvoice() {
+            const fileInput = document.getElementById('previewFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                displayResponse('previewResponse', { error: 'Please select a file' }, true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('invoice', file);
+
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/invoices/preview`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: formData
+                });
+
+                const data = await response.json();
+                displayResponse('previewResponse', { data, status: response.status }, !response.ok);
+            } catch (error) {
+                displayResponse('previewResponse', { error: error.message }, true);
+            }
+        }
+
+        async function testSaveConfirmed() {
+            const data = document.getElementById('saveConfirmedData').value;
+            
+            try {
+                const jsonData = JSON.parse(data);
+                const result = await makeRequest(`${getBaseUrl()}/api/invoices/save-confirmed`, {
+                    method: 'POST',
+                    body: JSON.stringify(jsonData)
+                });
+                
+                displayResponse('saveConfirmedResponse', result, !result.ok);
+            } catch (error) {
+                displayResponse('saveConfirmedResponse', { error: 'Invalid JSON: ' + error.message }, true);
+            }
+        }
+
+        async function testGetAllInvoices() {
+            const page = document.getElementById('invoicesPage').value;
+            const limit = document.getElementById('invoicesLimit').value;
+            const status = document.getElementById('invoicesStatus').value;
+            const vendor = document.getElementById('invoicesVendor').value;
+            
+            let query = `?page=${page}&limit=${limit}`;
+            if (status) query += `&status=${status}`;
+            if (vendor) query += `&vendor=${encodeURIComponent(vendor)}`;
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/invoices${query}`);
+            displayResponse('getAllInvoicesResponse', result, !result.ok);
+        }
+
+        async function testGetInvoiceById() {
+            const id = document.getElementById('getInvoiceId').value;
+            if (!id) {
+                displayResponse('getInvoiceResponse', { error: 'Please enter an invoice ID' }, true);
+                return;
+            }
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/invoices/${id}`);
+            displayResponse('getInvoiceResponse', result, !result.ok);
+        }
+
+        async function testUpdateInvoice() {
+            const id = document.getElementById('updateInvoiceId').value;
+            const data = document.getElementById('updateInvoiceData').value;
+            
+            if (!id) {
+                displayResponse('updateInvoiceResponse', { error: 'Please enter an invoice ID' }, true);
+                return;
+            }
+            
+            try {
+                const jsonData = JSON.parse(data);
+                const result = await makeRequest(`${getBaseUrl()}/api/invoices/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(jsonData)
+                });
+                
+                displayResponse('updateInvoiceResponse', result, !result.ok);
+            } catch (error) {
+                displayResponse('updateInvoiceResponse', { error: 'Invalid JSON: ' + error.message }, true);
+            }
+        }
+
+        async function testApproveReject() {
+            const id = document.getElementById('approveInvoiceId').value;
+            const action = document.getElementById('approveAction').value;
+            const comments = document.getElementById('approveComments').value;
+            
+            if (!id) {
+                displayResponse('approveRejectResponse', { error: 'Please enter an invoice ID' }, true);
+                return;
+            }
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/invoices/${id}/approve-reject`, {
+                method: 'POST',
+                body: JSON.stringify({ action, comments })
+            });
+            
+            displayResponse('approveRejectResponse', result, !result.ok);
+        }
+
+        async function testMarkAsPaid() {
+            const id = document.getElementById('paidInvoiceId').value;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const paymentReference = document.getElementById('paymentReference').value;
+            
+            if (!id) {
+                displayResponse('markPaidResponse', { error: 'Please enter an invoice ID' }, true);
+                return;
+            }
+            
+            const result = await makeRequest(`${getBaseUrl()}/api/invoices/${id}/mark-paid`, {
+                method: 'POST',
+                body: JSON.stringify({ paymentDate, paymentReference })
+            });
+            
+            displayResponse('markPaidResponse', result, !result.ok);
+        }
+
+        async function testGetInvoiceFile() {
+            const id = document.getElementById('fileInvoiceId').value;
+            if (!id) {
+                displayResponse('getFileResponse', { error: 'Please enter an invoice ID' }, true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/invoices/${id}/file`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const contentType = response.headers.get('Content-Type');
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    
+                    displayResponse('getFileResponse', {
+                        message: 'File downloaded successfully',
+                        contentType,
+                        contentDisposition,
+                        size: blob.size
+                    }, false);
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `invoice-${id}`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    const data = await response.json();
+                    displayResponse('getFileResponse', { error: data, status: response.status }, true);
+                }
+            } catch (error) {
+                displayResponse('getFileResponse', { error: error.message }, true);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current date for payment date input
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>

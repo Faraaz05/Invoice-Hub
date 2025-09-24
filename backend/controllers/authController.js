@@ -14,13 +14,21 @@ const generateToken = (id, role) => {
 // Register new user (admin only)
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, department } = req.body;
 
     // Validation
     if (!name || !email || !password || !role) {
       return res.status(400).json({
         success: false,
         message: 'Please provide name, email, password, and role'
+      });
+    }
+
+    // Additional validation for manager role
+    if (role === 'manager' && !department) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department is required for manager role'
       });
     }
 
@@ -45,13 +53,21 @@ const registerUser = async (req, res) => {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user
-    const user = await User.create({
+    // Create user data object
+    const userData = {
       name,
       email,
       passwordHash,
       role
-    });
+    };
+
+    // Add department for managers
+    if (role === 'manager') {
+      userData.department = department;
+    }
+
+    // Create user
+    const user = await User.create(userData);
 
     // Generate token
     const token = generateToken(user._id, user.role);
@@ -64,6 +80,7 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        department: user.department || null,
         token
       }
     });
@@ -157,8 +174,45 @@ const getProfile = async (req, res) => {
   }
 };
 
+// Get managers by department
+const getManagersByDepartment = async (req, res) => {
+  try {
+    const managers = await User.find({ role: 'manager' })
+      .select('_id name email department')
+      .sort({ department: 1, name: 1 });
+    
+    // Group managers by department
+    const managersByDept = managers.reduce((acc, manager) => {
+      if (!acc[manager.department]) {
+        acc[manager.department] = [];
+      }
+      acc[manager.department].push({
+        id: manager._id,
+        name: manager.name,
+        email: manager.email
+      });
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      success: true,
+      data: {
+        managers: managersByDept,
+        departments: Object.keys(managersByDept).sort()
+      }
+    });
+  } catch (error) {
+    console.error('Get managers error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
-  getProfile
+  getProfile,
+  getManagersByDepartment
 };
