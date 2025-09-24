@@ -18,8 +18,24 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (authUtils.isAuthenticated()) {
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      const currentUser = authUtils.getCurrentUser();
+      let redirectPath = location.state?.from?.pathname;
+      
+      if (!redirectPath) {
+        // Default redirect based on role
+        switch (currentUser?.role) {
+          case 'admin':
+            redirectPath = '/users';
+            break;
+          case 'manager':
+            redirectPath = '/approvals';
+            break;
+          default:
+            redirectPath = '/dashboard';
+        }
+      }
+      
+      navigate(redirectPath, { replace: true });
     }
   }, [navigate, location]);
 
@@ -64,9 +80,24 @@ const Login = () => {
 
       console.log('Auth data stored, redirecting...');
 
-      // Redirect to the page user was trying to access, or dashboard
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      // Determine redirect path based on user role
+      let redirectPath = location.state?.from?.pathname;
+      
+      if (!redirectPath) {
+        // Default redirect based on role
+        switch (user.role) {
+          case 'admin':
+            redirectPath = '/users';
+            break;
+          case 'manager':
+            redirectPath = '/approvals';
+            break;
+          default:
+            redirectPath = '/dashboard';
+        }
+      }
+      
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       setError(
@@ -105,7 +136,7 @@ const Login = () => {
                 id="email"
                 name="email"
                 className="form-input"
-                placeholder="Enter your email"
+                placeholder="      Enter your email"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -125,7 +156,7 @@ const Login = () => {
                 id="password"
                 name="password"
                 className="form-input"
-                placeholder="Enter your password"
+                placeholder="      Enter your password"
                 value={formData.password}
                 onChange={handleInputChange}
                 required

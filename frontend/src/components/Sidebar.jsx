@@ -27,7 +27,7 @@ function Sidebar() {
         label: 'Dashboard', 
         icon: LayoutDashboard,
         description: 'Overview & Analytics',
-        roles: ['admin', 'manager', 'controller', 'clerk']
+        roles: ['controller', 'clerk']
       }
     ];
 
@@ -38,22 +38,29 @@ function Sidebar() {
         label: 'Upload Invoice', 
         icon: Upload,
         description: 'Add new invoices',
-        roles: ['admin', 'clerk']
+        roles: ['clerk']
       },
       
       // Manager specific items
-      { 
-        path: '/invoices', 
-        label: 'Review Invoices', 
-        icon: Eye,
-        description: 'Review & approve invoices',
-        roles: ['manager']
-      },
       { 
         path: '/approvals', 
         label: 'Pending Approvals', 
         icon: CheckCircle,
         description: 'Invoices awaiting approval',
+        roles: ['manager']
+      },
+      { 
+        path: '/department-invoices', 
+        label: 'Department Invoices', 
+        icon: Eye,
+        description: 'View all department invoices',
+        roles: ['manager']
+      },
+      { 
+        path: '/department-analytics', 
+        label: 'Department Analytics', 
+        icon: BarChart3,
+        description: 'Department performance metrics',
         roles: ['manager']
       },
       
@@ -79,13 +86,6 @@ function Sidebar() {
         label: 'User Management', 
         icon: Users,
         description: 'Manage users & roles',
-        roles: ['admin']
-      },
-      { 
-        path: '/reports', 
-        label: 'Reports & Analytics', 
-        icon: BarChart3,
-        description: 'System reports & analytics',
         roles: ['admin']
       }
     ];

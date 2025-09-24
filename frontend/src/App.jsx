@@ -2,10 +2,15 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
+import AdminOnlyRoute from './components/AdminOnlyRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import InvoiceUpload from './pages/InvoiceUpload';
 import InvoiceDetails from './pages/InvoiceDetails';
+import AdminDashboard from './pages/AdminDashboard';
+import PendingApprovals from './pages/PendingApprovals';
+import DepartmentInvoices from './pages/DepartmentInvoices';
+import DepartmentAnalytics from './pages/DepartmentAnalytics';
 import { authUtils } from './utils/auth';
 import './App.css';
 import './styles/globals.css';
@@ -37,9 +42,15 @@ function App() {
                   <Route path="/invoices/upload" element={<InvoiceUpload />} />
                   <Route path="/invoices/:id" element={<InvoiceDetails />} />
                   <Route path="/invoices" element={<Dashboard />} /> {/* Reuse dashboard for invoice list */}
-                  <Route path="/approvals" element={<Dashboard />} /> {/* Manager approval view */}
+                  <Route path="/approvals" element={<PendingApprovals />} /> {/* Manager approval view */}
+                  <Route path="/department-invoices" element={<DepartmentInvoices />} /> {/* Manager department invoices */}
+                  <Route path="/department-analytics" element={<DepartmentAnalytics />} /> {/* Manager department analytics */}
                   <Route path="/payments" element={<Dashboard />} /> {/* Controller payment view */}
-                  <Route path="/users" element={<Dashboard />} /> {/* Admin user management placeholder */}
+                  <Route path="/users" element={
+                    <AdminOnlyRoute>
+                      <AdminDashboard />
+                    </AdminOnlyRoute>
+                  } />
                   <Route path="/reports" element={<Dashboard />} /> {/* Admin reports placeholder */}
                   <Route path="/settings" element={<Dashboard />} /> {/* Admin settings placeholder */}
                   <Route path="/help" element={<Dashboard />} /> {/* Help page placeholder */}

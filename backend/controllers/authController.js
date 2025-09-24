@@ -210,9 +210,30 @@ const getManagersByDepartment = async (req, res) => {
   }
 };
 
+// Get all users (admin only)
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select('-passwordHash')
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getProfile,
-  getManagersByDepartment
+  getManagersByDepartment,
+  getAllUsers
 };

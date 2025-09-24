@@ -49,15 +49,46 @@ const Dashboard = () => {
           <p className="page-subtitle">{getWelcomeMessage()}</p>
         </div>
 
-        {/* Dashboard Statistics */}
-        <section className="dashboard-section">
-          <DashboardStats />
-        </section>
-
-        {/* Invoice Management Section */}
-        <section className="dashboard-section">
-          <InvoiceList />
-        </section>
+        {/* Role-specific Dashboard Content */}
+        {currentUser?.role === 'admin' ? (
+          // Admin Dashboard - User Management Focus
+          <section className="dashboard-section">
+            <div className="admin-dashboard-overview">
+              <h2>System Overview</h2>
+              <p>Welcome to the InvoiceHub administration panel. Use the sidebar to manage user accounts and system settings.</p>
+              
+              <div className="admin-quick-actions">
+                <div className="quick-action-card">
+                  <h3>User Management</h3>
+                  <p>Create and manage user accounts across all roles and departments.</p>
+                  <a href="/users" className="action-link">Manage Users →</a>
+                </div>
+                
+                <div className="quick-action-card">
+                  <h3>System Reports</h3>
+                  <p>View comprehensive reports and analytics across the system.</p>
+                  <a href="/reports" className="action-link">View Reports →</a>
+                </div>
+                
+                <div className="quick-action-card">
+                  <h3>System Settings</h3>
+                  <p>Configure system-wide settings and preferences.</p>
+                  <a href="/settings" className="action-link">System Settings →</a>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : (
+          // Non-Admin Dashboard - Invoice Management Focus
+          <>
+            <section className="dashboard-section">
+              <DashboardStats />
+            </section>
+            <section className="dashboard-section">
+              <InvoiceList />
+            </section>
+          </>
+        )}
       </div>
     </div>
   );
