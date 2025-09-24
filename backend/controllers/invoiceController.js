@@ -449,10 +449,10 @@ const uploadInvoice = async (req, res) => {
 
     console.log(`🏢 Department: ${selectedDepartment}`);
 
-    // Find the manager for the selected department
+    // Find the manager for the selected department (case-insensitive)
     const departmentManager = await User.findOne({ 
       role: 'manager', 
-      department: selectedDepartment 
+      department: { $regex: new RegExp(`^${selectedDepartment}$`, 'i') }
     });
 
     if (!departmentManager) {
@@ -630,21 +630,27 @@ const uploadInvoice = async (req, res) => {
 
     console.log('\n📅 === DATE PROCESSING ===');
     const parsedInvoiceDate = parseDate(structuredData.invoiceDate, new Date());
-    const defaultDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const parsedDueDate = parseDate(structuredData.dueDate, defaultDueDate);
     
-    // Ensure due date is not before invoice date
-    if (parsedDueDate < parsedInvoiceDate) {
-      console.log('⚠️  Due date is before invoice date, adjusting...');
-      parsedDueDate.setTime(parsedInvoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-      console.log(`✅ Adjusted due date: ${parsedDueDate.toISOString()}`);
+    // Only parse due date if it's provided (not null)
+    let parsedDueDate = null;
+    if (structuredData.dueDate && structuredData.dueDate !== null) {
+      parsedDueDate = parseDate(structuredData.dueDate, null);
+      
+      // Ensure due date is not before invoice date
+      if (parsedDueDate && parsedDueDate < parsedInvoiceDate) {
+        console.log('⚠️  Due date is before invoice date, adjusting...');
+        parsedDueDate.setTime(parsedInvoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        console.log(`✅ Adjusted due date: ${parsedDueDate.toISOString()}`);
+      }
+    } else {
+      console.log('ℹ️  No due date found in invoice, leaving as null');
     }
 
     // Use AI-extracted data or fallback to default values
     const invoiceData = {
       invoiceNumber: structuredData.invoiceNumber || `TEMP-${Date.now()}`,
       invoiceDate: parsedInvoiceDate,
-      dueDate: parsedDueDate,
+      dueDate: parsedDueDate, // Will be null if not provided in invoice
       
       billedBy: {
         name: structuredData.billedBy?.name || 'Pending Verification',
@@ -719,17 +725,19 @@ const uploadInvoice = async (req, res) => {
     
     // Validate dates
     console.log(`📅 Invoice Date: ${invoiceData.invoiceDate} (${invoiceData.invoiceDate instanceof Date ? 'Date' : typeof invoiceData.invoiceDate})`);
-    console.log(`📅 Due Date: ${invoiceData.dueDate} (${invoiceData.dueDate instanceof Date ? 'Date' : typeof invoiceData.dueDate})`);
+    console.log(`📅 Due Date: ${invoiceData.dueDate ? invoiceData.dueDate : 'null (optional)'} (${invoiceData.dueDate instanceof Date ? 'Date' : typeof invoiceData.dueDate})`);
     
     if (!invoiceData.invoiceDate || isNaN(invoiceData.invoiceDate.getTime())) {
       throw new Error('Invalid invoice date');
     }
     
-    if (!invoiceData.dueDate || isNaN(invoiceData.dueDate.getTime())) {
+    // Only validate due date if it's provided (since it's optional)
+    if (invoiceData.dueDate && isNaN(invoiceData.dueDate.getTime())) {
       throw new Error('Invalid due date');
     }
     
-    if (invoiceData.dueDate < invoiceData.invoiceDate) {
+    // Only check due date vs invoice date if due date is provided
+    if (invoiceData.dueDate && invoiceData.dueDate < invoiceData.invoiceDate) {
       throw new Error('Due date cannot be before invoice date');
     }
     
@@ -737,7 +745,7 @@ const uploadInvoice = async (req, res) => {
     console.log('📊 Invoice data structure:');
     console.log(`   - Invoice Number: ${invoiceData.invoiceNumber}`);
     console.log(`   - Invoice Date: ${invoiceData.invoiceDate.toISOString()}`);
-    console.log(`   - Due Date: ${invoiceData.dueDate.toISOString()}`);
+    console.log(`   - Due Date: ${invoiceData.dueDate ? invoiceData.dueDate.toISOString() : 'Not specified'}`);
     console.log(`   - Billed By: ${invoiceData.billedBy.name}`);
     console.log(`   - Billed To: ${invoiceData.billedTo.name}`);
     console.log(`   - Items count: ${invoiceData.items.length}`);
@@ -853,13 +861,8 @@ const getInvoiceFile = async (req, res) => {
       });
     }
 
-    // Check if user has permission to view this invoice
-    if (req.user.role === 'clerk' && invoice.uploadedBy.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only view invoices you uploaded'
-      });
-    }
+    // All authenticated users can download invoice files
+    // (Removed clerk restriction - clerks can download any invoice)
 
     // Set appropriate headers
     res.set({

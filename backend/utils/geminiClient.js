@@ -142,12 +142,14 @@ You are an expert invoice data extraction AI. Analyze the following OCR text fro
 OCR TEXT:
 ${rawText}
 
-Please extract and return the data in the following JSON format. If any field is not found or unclear, use reasonable defaults or "Pending Verification":
+Please extract and return the data in the following JSON format. If any field is not found or unclear, use reasonable defaults or "Pending Verification". 
+
+IMPORTANT: For dueDate - ONLY extract if explicitly mentioned in the invoice. If no due date is mentioned, set it to null. Do NOT hallucinate or assume a due date:
 
 {
   "invoiceNumber": "string",
   "invoiceDate": "YYYY-MM-DD",
-  "dueDate": "YYYY-MM-DD",
+  "dueDate": "YYYY-MM-DD or null if not specified",
   "billedBy": {
     "name": "string",
     "address": "string",

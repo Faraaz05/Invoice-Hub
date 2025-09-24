@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   ArrowLeft, 
-  Download, 
+  Download,
+  FileDown,
   Building, 
   Calendar, 
   DollarSign,
@@ -160,7 +161,7 @@ const InvoiceDetails = () => {
               Back to Dashboard
             </button>
             <button onClick={downloadInvoice} className="download-btn">
-              <Download size={16} />
+              <span className="download-icon">⬇</span>
               Download Invoice
             </button>
           </div>

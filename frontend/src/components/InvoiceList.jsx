@@ -3,7 +3,8 @@ import axios from 'axios';
 import { 
   Search, 
   Filter, 
-  Download, 
+  Download,
+  FileDown,
   Eye, 
   Calendar,
   Building,
@@ -400,7 +401,7 @@ const InvoiceList = () => {
                     className="action-btn download-btn"
                     title="Download Invoice"
                   >
-                    <Download size={14} />
+                    <span className="download-icon">⬇</span>
                   </button>
                 </td>
               </tr>

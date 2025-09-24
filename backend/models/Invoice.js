@@ -220,10 +220,11 @@ const invoiceSchema = new mongoose.Schema({
   },
   dueDate: {
     type: Date,
-    required: [true, 'Due date is required'],
+    required: false, // Due date is optional - not all invoices have due dates
     validate: {
       validator: function(value) {
-        return value >= this.invoiceDate;
+        // Only validate if due date is provided
+        return !value || value >= this.invoiceDate;
       },
       message: 'Due date must be on or after invoice date'
     }

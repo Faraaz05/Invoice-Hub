@@ -306,9 +306,9 @@
 }
 
 .download-btn:hover {
-  background-color: rgba(22, 163, 74, 0.1);
-  color: var(--color-success);
-  border-color: var(--color-success);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
 }
 
 /* No Invoices State */
