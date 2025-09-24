@@ -67,12 +67,14 @@ const getAllInvoices = async (req, res) => {
     }
 
     // Role-based filtering
-    if (req.user.role === 'clerk') {
-      filter.uploadedBy = req.user.id;
-    } else if (req.user.role === 'manager') {
-      // Managers see invoices assigned to them
+    if (req.user.role === 'manager') {
+      // Managers see invoices assigned to them or from their department
       filter.assignedManager = req.user.id;
+    } else if (req.user.role === 'controller') {
+      // Controllers see only approved invoices ready for payment
+      filter.status = 'approved';
     }
+    // Clerks and Admins see all invoices (no additional filtering)
 
     const skip = (page - 1) * limit;
     const sortObj = {};

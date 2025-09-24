@@ -1,8 +1,10 @@
 # GitHub Copilot Instructions: InvoiceHub Frontend UI/UX
 
+DO NOT DIRECTLY RUN COMMANDS IN THE TERMINAL , YOU MESS UP THE CONTEXT YOU RUN COMMAND ON THE TERMINAL WHICH STOPS THE SERVER , YOU DO NOT KNOW THE CONTEXT. IF YOU WANT TO RUN TERMINAL COMMANDS JUST TELL ME AND ILL DO IT AND GIVE YOU THE RESPONSE BACK THIS SAVES BOTH OF OUR TIME.
+
 ## 1. Core Philosophy & Vision
 
-**Guiding Principle:** Create a minimalist, content-focused, and highly functional user interface inspired by the clean aesthetics of Notion.so. The UI must feel professional, intuitive, and calm. Prioritize clarity, consistency, and performance. **Avoid all visual clutter, unnecessary decorations, and emojis.**
+**Guiding Principle:** Create a STYLISTIC, content-focused, and highly functional user interface inspired by the clean aesthetics of Notion.so. The UI must feel professional, intuitive, and calm. Prioritize clarity, consistency, and performance. 
 
 **Copilot's Role:** Act as a frontend developer partner who is an expert in this specific design system. All generated code, from single components to entire pages, must strictly adhere to the tokens and guidelines defined below. When in doubt, err on the side of simplicity and minimalism.
 
@@ -116,7 +118,7 @@ Adhere to an 8-point grid system. All margins, paddings, and layout gaps should 
 
 ## 4. General Directives for Copilot
 
-1.  **Strict Token Adherence:** ALWAYS use the defined color, typography, and spacing tokens. Do not hardcode values. If using Tailwind CSS, assume these tokens are configured in `tailwind.config.js`.
+1.  **Strict Token Adherence:** ALWAYS use the defined color, typography, and spacing tokens.                                                           
 2.  **No Emojis:** The UI must be strictly professional. Do not use emojis in any generated component, placeholder text, labels, or comments.
 3.  **Componentization:** Generate code as modular, reusable components (e.g., React/Vue functional components). Props should be used for customization.
 4.  **Accessibility First:** Generate semantic HTML (`<nav>`, `<main>`, `<button>`). Ensure all interactive elements are keyboard-navigable and have proper ARIA attributes where necessary (e.g., `aria-label` for icon-only buttons).
