@@ -40,13 +40,6 @@ function Sidebar() {
         description: 'Add new invoices',
         roles: ['admin', 'clerk']
       },
-      { 
-        path: '/invoices', 
-        label: 'All Invoices', 
-        icon: FileText,
-        description: 'View all invoices',
-        roles: ['clerk']
-      },
       
       // Manager specific items
       { 
@@ -81,13 +74,6 @@ function Sidebar() {
       },
       
       // Admin specific items
-      { 
-        path: '/invoices', 
-        label: 'All Invoices', 
-        icon: FileText,
-        description: 'View & manage all invoices',
-        roles: ['admin']
-      },
       { 
         path: '/users', 
         label: 'User Management', 
