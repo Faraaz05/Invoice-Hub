@@ -34,7 +34,7 @@ const DepartmentAnalytics = () => {
     topVendors: [],
     departmentStats: []
   });
-  const [selectedTimeframe, setSelectedTimeframe] = useState('3months');
+  const [selectedTimeframe, setSelectedTimeframe] = useState('all');
 
   useEffect(() => {
     fetchAnalytics();
@@ -50,7 +50,12 @@ const DepartmentAnalytics = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await axios.get(`/api/invoices/analytics?timeframe=${selectedTimeframe}`, {
+      // Build URL with optional timeframe parameter
+      const url = selectedTimeframe === 'all' 
+        ? 'http://localhost:5000/api/invoices/analytics'
+        : `http://localhost:5000/api/invoices/analytics?timeframe=${selectedTimeframe}`;
+
+      const response = await axios.get(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -134,6 +139,7 @@ const DepartmentAnalytics = () => {
               onChange={(e) => setSelectedTimeframe(e.target.value)}
               className="timeframe-select"
             >
+              <option value="all">All Time</option>
               <option value="1month">Last Month</option>
               <option value="3months">Last 3 Months</option>
               <option value="6months">Last 6 Months</option>

@@ -10,7 +10,8 @@ const {
   uploadInvoice,
   previewInvoice,
   saveConfirmedInvoice,
-  getInvoiceFile
+  getInvoiceFile,
+  getDepartmentAnalytics
 } = require('../controllers/invoiceController');
 const { protect, managerOrHigher, controllerOrHigher, clerkOrHigher } = require('../middleware/authMiddleware');
 const { uploadMiddleware } = require('../middleware/uploadMiddleware');
@@ -20,6 +21,9 @@ const router = express.Router();
 // Dashboard statistics
 router.get('/dashboard/stats', protect, getDashboardStats);
 router.get('/stats', protect, getDashboardStats); // Alias for backward compatibility
+
+// Analytics endpoint for managers
+router.get('/analytics', protect, managerOrHigher, getDepartmentAnalytics);
 
 // File upload route (clerk and above can upload) - auth middleware applied after multer
 router.post('/upload', uploadMiddleware, protect, uploadInvoice);

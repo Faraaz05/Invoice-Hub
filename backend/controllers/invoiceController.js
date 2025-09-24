@@ -1112,6 +1112,219 @@ const saveConfirmedInvoice = async (req, res) => {
   }
 };
 
+// Get department analytics for managers
+const getDepartmentAnalytics = async (req, res) => {
+  try {
+    const { timeframe } = req.query;
+    const userDepartment = req.user.department;
+    const userId = req.user.id;
+
+    // Check if user is manager or higher
+    if (!['manager', 'controller', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Manager role or higher required.'
+      });
+    }
+
+    // Build query filter - managers see their department, admins see all
+    const baseFilter = {};
+
+    // Only apply date filtering if timeframe is specified
+    if (timeframe) {
+      const now = new Date();
+      const startDate = new Date(now);
+      
+      switch (timeframe) {
+        case '1month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case '6months':
+          startDate.setMonth(now.getMonth() - 6);
+          break;
+        case '12months':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          // If invalid timeframe, don't apply date filter
+          break;
+      }
+
+      // Only add date filter if we have a valid timeframe
+      if (['1month', '3months', '6months', '12months'].includes(timeframe)) {
+        baseFilter.invoiceDate = { $gte: startDate, $lte: now };
+      }
+    }
+
+    if (req.user.role === 'manager') {
+      baseFilter.department = userDepartment;
+    }
+
+    console.log('Analytics Query Filter:', {
+      baseFilter,
+      timeframeApplied: !!timeframe,
+      timeframe: timeframe || 'all',
+      userRole: req.user.role,
+      userDepartment
+    });
+
+    // Get all invoices for the period
+    const invoices = await Invoice.find(baseFilter)
+      .populate('uploadedBy', 'name email')
+      .populate('assignedManager', 'name email')
+      .sort({ invoiceDate: -1 });
+
+    console.log(`Found ${invoices.length} invoices for analytics`);
+    
+    // Also get all invoices for this department to debug
+    const allDeptInvoices = await Invoice.find(
+      req.user.role === 'manager' ? { department: userDepartment } : {}
+    ).select('invoiceNumber invoiceDate department status totals createdAt');
+    
+    console.log('All department invoices:', allDeptInvoices.map(inv => ({
+      invoiceNumber: inv.invoiceNumber,
+      invoiceDate: inv.invoiceDate,
+      createdAt: inv.createdAt,
+      department: inv.department,
+      status: inv.status,
+      total: inv.totals?.grandTotal
+    })));
+
+    // Calculate overview metrics
+    const totalInvoices = invoices.length;
+    const totalAmount = invoices.reduce((sum, inv) => sum + (inv.totals?.grandTotal || 0), 0);
+    
+    // Calculate average processing time (from invoice date to approval/rejection)
+    const processedInvoices = invoices.filter(inv => 
+      ['approved', 'rejected', 'paid'].includes(inv.status) && 
+      inv.approvalHistory && 
+      inv.approvalHistory.length > 0
+    );
+    
+    let avgProcessingTime = 0;
+    if (processedInvoices.length > 0) {
+      const totalProcessingTime = processedInvoices.reduce((sum, inv) => {
+        const lastApproval = inv.approvalHistory[inv.approvalHistory.length - 1];
+        const processingTime = (new Date(lastApproval.timestamp) - new Date(inv.invoiceDate)) / (1000 * 60 * 60 * 24);
+        return sum + processingTime;
+      }, 0);
+      avgProcessingTime = totalProcessingTime / processedInvoices.length;
+    }
+
+    // Calculate approval rate
+    const approvedInvoices = invoices.filter(inv => ['approved', 'paid'].includes(inv.status));
+    const approvalRate = totalInvoices > 0 ? (approvedInvoices.length / totalInvoices) * 100 : 0;
+
+    // Status breakdown
+    const statusBreakdown = {
+      pending: invoices.filter(inv => inv.status === 'pending').length,
+      approved: invoices.filter(inv => inv.status === 'approved').length,
+      rejected: invoices.filter(inv => inv.status === 'rejected').length,
+      paid: invoices.filter(inv => inv.status === 'paid').length
+    };
+
+    // Monthly trends
+    const monthlyTrends = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Group invoices by month
+    const monthlyData = {};
+    invoices.forEach(invoice => {
+      const date = new Date(invoice.invoiceDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+      
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          month: monthLabel,
+          invoiceCount: 0,
+          totalAmount: 0
+        };
+      }
+      
+      monthlyData[monthKey].invoiceCount++;
+      monthlyData[monthKey].totalAmount += invoice.totals?.grandTotal || 0;
+    });
+
+    // Convert to array and sort by month
+    Object.keys(monthlyData)
+      .sort()
+      .slice(-6) // Last 6 months
+      .forEach(key => {
+        monthlyTrends.push(monthlyData[key]);
+      });
+
+    // Top vendors analysis
+    const vendorData = {};
+    invoices.forEach(invoice => {
+      const vendorName = invoice.billedBy?.name || 'Unknown Vendor';
+      if (!vendorData[vendorName]) {
+        vendorData[vendorName] = {
+          name: vendorName,
+          invoiceCount: 0,
+          totalAmount: 0
+        };
+      }
+      vendorData[vendorName].invoiceCount++;
+      vendorData[vendorName].totalAmount += invoice.totals?.grandTotal || 0;
+    });
+
+    const topVendors = Object.values(vendorData)
+      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .slice(0, 5); // Top 5 vendors
+
+    // Department performance metrics (if admin, show all departments)
+    let departmentStats = [];
+    if (req.user.role === 'admin') {
+      const departments = ['Sales', 'Marketing', 'Operations', 'Finance', 'HR', 'IT', 'Procurement', 'Legal'];
+      
+      for (const dept of departments) {
+        const deptInvoices = invoices.filter(inv => inv.department === dept);
+        if (deptInvoices.length > 0) {
+          const deptApproved = deptInvoices.filter(inv => ['approved', 'paid'].includes(inv.status));
+          departmentStats.push({
+            department: dept,
+            totalInvoices: deptInvoices.length,
+            totalAmount: deptInvoices.reduce((sum, inv) => sum + (inv.totals?.grandTotal || 0), 0),
+            approvalRate: (deptApproved.length / deptInvoices.length) * 100
+          });
+        }
+      }
+    }
+
+    const analyticsData = {
+      overview: {
+        totalInvoices,
+        totalAmount,
+        avgProcessingTime,
+        approvalRate
+      },
+      statusBreakdown,
+      monthlyTrends,
+      topVendors,
+      departmentStats,
+      timeframe: timeframe || 'all',
+      department: req.user.role === 'manager' ? userDepartment : 'All Departments'
+    };
+
+    res.json({
+      success: true,
+      data: analyticsData
+    });
+
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching analytics data',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createInvoice,
   getAllInvoices,
@@ -1123,5 +1336,6 @@ module.exports = {
   uploadInvoice,
   previewInvoice,
   saveConfirmedInvoice,
-  getInvoiceFile
+  getInvoiceFile,
+  getDepartmentAnalytics
 };
