@@ -355,6 +355,7 @@
   gap: 2px;
 }
 
+.trend-quarter,
 .trend-month {
   font-size: var(--font-size-xs);
   font-weight: 500;
@@ -586,6 +587,7 @@
     gap: 1px;
   }
 
+  .trend-quarter,
   .trend-month,
   .trend-count,
   .trend-amount {

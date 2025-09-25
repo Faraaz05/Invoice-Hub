@@ -22,12 +22,17 @@ const InvoiceList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('vendor'); // New search type selector
   const [filters, setFilters] = useState({
     status: '',
     startDate: '',
     endDate: '',
-    vendor: ''
+    vendor: '',
+    department: '',
+    minAmount: '',
+    maxAmount: ''
   });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pages: 1,
@@ -74,6 +79,18 @@ const InvoiceList = () => {
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
       if (filters.vendor) params.append('vendor', filters.vendor);
+      if (filters.department) params.append('department', filters.department);
+      if (filters.minAmount) params.append('minAmount', filters.minAmount);
+      if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
+      
+      // Add search term based on search type
+      if (searchTerm) {
+        if (searchType === 'invoiceNumber') {
+          params.append('invoiceNumber', searchTerm);
+        } else if (searchType === 'vendor') {
+          params.append('vendor', searchTerm);
+        }
+      }
 
       const token = localStorage.getItem('token');
       const response = await axios.get(`http://localhost:5000/api/invoices?${params.toString()}`, {
@@ -98,7 +115,31 @@ const InvoiceList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setFilters(prev => ({ ...prev, vendor: searchTerm }));
+    // Clear existing search filters and apply new search
+    const newFilters = { ...filters };
+    
+    // Clear previous search results
+    if (searchType === 'vendor') {
+      newFilters.vendor = searchTerm;
+    } else if (searchType === 'invoiceNumber') {
+      // Invoice number search will be handled in fetchInvoices via params
+    }
+    
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+  
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      status: '',
+      startDate: '',
+      endDate: '',
+      vendor: '',
+      department: '',
+      minAmount: '',
+      maxAmount: ''
+    });
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
@@ -227,25 +268,43 @@ const InvoiceList = () => {
         })()}
       </div>
 
-      {/* Search and Filters */}
+      {/* Enhanced Search and Filters */}
       <div className="invoice-controls">
+        {/* Main Search Bar */}
         <form onSubmit={handleSearch} className="search-form">
           <div className="search-input-wrapper">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by vendor name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+            <div className="search-type-selector">
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                className="search-type-select"
+              >
+                <option value="vendor">Vendor</option>
+                <option value="invoiceNumber">Invoice #</option>
+              </select>
+            </div>
+            <div className="search-input-container">
+              <Search size={18} className="search-icon" />
+              <input
+                type="text"
+                placeholder={
+                  searchType === 'vendor' 
+                    ? "Search by vendor name..." 
+                    : "Search by invoice number..."
+                }
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
             <button type="submit" className="search-btn">
               Search
             </button>
           </div>
         </form>
 
-        <div className="filters">
+        {/* Quick Filters Row */}
+        <div className="quick-filters">
           <div className="filter-group">
             <Filter size={16} />
             <select
@@ -309,6 +368,7 @@ const InvoiceList = () => {
               onChange={(e) => handleFilterChange('startDate', e.target.value)}
               className="filter-date"
               placeholder="Start Date"
+              title="From Date"
             />
             <span className="date-separator">to</span>
             <input
@@ -317,9 +377,130 @@ const InvoiceList = () => {
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
               className="filter-date"
               placeholder="End Date"
+              title="To Date"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`advanced-filter-toggle ${showAdvancedFilters ? 'active' : ''}`}
+          >
+            {showAdvancedFilters ? 'Less Filters' : 'More Filters'}
+          </button>
+
+          {(searchTerm || Object.values(filters).some(v => v)) && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="clear-filters-btn"
+            >
+              Clear All
+            </button>
+          )}
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="advanced-filters">
+            <div className="advanced-filters-row">
+              {currentUser?.role === 'admin' && (
+                <div className="filter-group">
+                  <Building size={16} />
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange('department', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="">All Departments</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Finance">Finance</option>
+                    <option value="HR">HR</option>
+                    <option value="IT">IT</option>
+                    <option value="Procurement">Procurement</option>
+                    <option value="Legal">Legal</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="filter-group amount-range">
+                <DollarSign size={16} />
+                <input
+                  type="number"
+                  placeholder="Min Amount"
+                  value={filters.minAmount}
+                  onChange={(e) => handleFilterChange('minAmount', e.target.value)}
+                  className="filter-amount"
+                  min="0"
+                  step="0.01"
+                />
+                <span className="amount-separator">to</span>
+                <input
+                  type="number"
+                  placeholder="Max Amount"
+                  value={filters.maxAmount}
+                  onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
+                  className="filter-amount"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active Filters Display */}
+        {(searchTerm || Object.values(filters).some(v => v)) && (
+          <div className="active-filters">
+            <span className="active-filters-label">Active filters:</span>
+            <div className="filter-tags">
+              {searchTerm && (
+                <span className="filter-tag">
+                  {searchType === 'vendor' ? 'Vendor' : 'Invoice #'}: "{searchTerm}"
+                  <button onClick={() => setSearchTerm('')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.status && (
+                <span className="filter-tag">
+                  Status: {filters.status}
+                  <button onClick={() => handleFilterChange('status', '')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.startDate && (
+                <span className="filter-tag">
+                  From: {formatDate(filters.startDate)}
+                  <button onClick={() => handleFilterChange('startDate', '')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.endDate && (
+                <span className="filter-tag">
+                  To: {formatDate(filters.endDate)}
+                  <button onClick={() => handleFilterChange('endDate', '')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.department && (
+                <span className="filter-tag">
+                  Department: {filters.department}
+                  <button onClick={() => handleFilterChange('department', '')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.minAmount && (
+                <span className="filter-tag">
+                  Min: ₹{filters.minAmount}
+                  <button onClick={() => handleFilterChange('minAmount', '')} className="remove-filter">×</button>
+                </span>
+              )}
+              {filters.maxAmount && (
+                <span className="filter-tag">
+                  Max: ₹{filters.maxAmount}
+                  <button onClick={() => handleFilterChange('maxAmount', '')} className="remove-filter">×</button>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Display */}

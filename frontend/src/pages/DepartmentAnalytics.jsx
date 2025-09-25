@@ -30,7 +30,7 @@ const DepartmentAnalytics = () => {
       rejected: 0,
       paid: 0
     },
-    monthlyTrends: [],
+    quarterlyTrends: [],
     topVendors: [],
     departmentStats: []
   });
@@ -233,18 +233,18 @@ const DepartmentAnalytics = () => {
           </div>
         </div>
 
-        {/* Monthly Trends Chart */}
+        {/* Quarterly Trends Chart */}
         <div className="chart-container">
           <div className="chart-header">
-            <h3>Monthly Trends</h3>
+            <h3>Quarterly Trends</h3>
             <BarChart3 size={20} />
           </div>
           <div className="trends-chart">
-            {analytics.monthlyTrends.length > 0 ? (
+            {analytics.quarterlyTrends.length > 0 ? (
               <div className="trends-bars">
-                {analytics.monthlyTrends.map((month, index) => {
-                  const maxAmount = Math.max(...analytics.monthlyTrends.map(m => m.totalAmount));
-                  const heightPercentage = maxAmount > 0 ? (month.totalAmount / maxAmount) * 100 : 0;
+                {analytics.quarterlyTrends.map((quarter, index) => {
+                  const maxAmount = Math.max(...analytics.quarterlyTrends.map(q => q.totalAmount));
+                  const heightPercentage = maxAmount > 0 ? (quarter.totalAmount / maxAmount) * 100 : 0;
                   
                   return (
                     <div key={index} className="trend-item">
@@ -252,13 +252,13 @@ const DepartmentAnalytics = () => {
                         <div 
                           className="trend-fill"
                           style={{ height: `${heightPercentage}%` }}
-                          title={`${month.month}: ${formatCurrency(month.totalAmount)}`}
+                          title={`${quarter.quarter}: ${formatCurrency(quarter.totalAmount)}`}
                         ></div>
                       </div>
                       <div className="trend-details">
-                        <span className="trend-month">{month.month}</span>
-                        <span className="trend-count">{month.invoiceCount}</span>
-                        <span className="trend-amount">{formatCurrency(month.totalAmount)}</span>
+                        <span className="trend-quarter">{quarter.quarter}</span>
+                        <span className="trend-count">{quarter.invoiceCount}</span>
+                        <span className="trend-amount">{formatCurrency(quarter.totalAmount)}</span>
                       </div>
                     </div>
                   );
@@ -267,7 +267,7 @@ const DepartmentAnalytics = () => {
             ) : (
               <div className="no-data">
                 <Calendar size={32} />
-                <p>No trend data available for the selected period</p>
+                <p>No quarterly trend data available for the selected period</p>
               </div>
             )}
           </div>

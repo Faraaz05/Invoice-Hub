@@ -44,6 +44,10 @@ const getAllInvoices = async (req, res) => {
       startDate,
       endDate,
       vendor,
+      invoiceNumber,
+      department,
+      minAmount,
+      maxAmount,
       sortBy = 'invoiceDate',
       sortOrder = 'desc'
     } = req.query;
@@ -64,6 +68,25 @@ const getAllInvoices = async (req, res) => {
     
     if (vendor) {
       filter['billedBy.name'] = { $regex: vendor, $options: 'i' };
+    }
+    
+    if (invoiceNumber) {
+      filter.invoiceNumber = { $regex: invoiceNumber, $options: 'i' };
+    }
+    
+    if (department) {
+      filter.department = department;
+    }
+    
+    // Amount range filtering
+    if (minAmount || maxAmount) {
+      filter['totals.grandTotal'] = {};
+      if (minAmount) {
+        filter['totals.grandTotal'].$gte = parseFloat(minAmount);
+      }
+      if (maxAmount) {
+        filter['totals.grandTotal'].$lte = parseFloat(maxAmount);
+      }
     }
 
     // Role-based filtering
@@ -1309,35 +1332,37 @@ const getDepartmentAnalytics = async (req, res) => {
       paid: invoices.filter(inv => inv.status === 'paid').length
     };
 
-    // Monthly trends
-    const monthlyTrends = [];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Quarterly trends
+    const quarterlyTrends = [];
     
-    // Group invoices by month
-    const monthlyData = {};
+    // Group invoices by quarter
+    const quarterlyData = {};
     invoices.forEach(invoice => {
       const date = new Date(invoice.invoiceDate);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1; // 1-12
+      const quarter = Math.ceil(month / 3); // 1-4
+      const quarterKey = `${year}-Q${quarter}`;
+      const quarterLabel = `Q${quarter} ${year}`;
       
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {
-          month: monthLabel,
+      if (!quarterlyData[quarterKey]) {
+        quarterlyData[quarterKey] = {
+          quarter: quarterLabel,
           invoiceCount: 0,
           totalAmount: 0
         };
       }
       
-      monthlyData[monthKey].invoiceCount++;
-      monthlyData[monthKey].totalAmount += invoice.totals?.grandTotal || 0;
+      quarterlyData[quarterKey].invoiceCount++;
+      quarterlyData[quarterKey].totalAmount += invoice.totals?.grandTotal || 0;
     });
 
-    // Convert to array and sort by month
-    Object.keys(monthlyData)
+    // Convert to array and sort by quarter (last 8 quarters / 2 years)
+    Object.keys(quarterlyData)
       .sort()
-      .slice(-6) // Last 6 months
+      .slice(-8) // Last 8 quarters
       .forEach(key => {
-        monthlyTrends.push(monthlyData[key]);
+        quarterlyTrends.push(quarterlyData[key]);
       });
 
     // Top vendors analysis
@@ -1386,7 +1411,7 @@ const getDepartmentAnalytics = async (req, res) => {
         approvalRate
       },
       statusBreakdown,
-      monthlyTrends,
+      quarterlyTrends,
       topVendors,
       departmentStats,
       timeframe: timeframe || 'all',
