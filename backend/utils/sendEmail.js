@@ -148,12 +148,31 @@ class EmailService {
     
     // Send to all managers
     for (const manager of managers) {
+      // Create a clean invoice object without binary data for logging
+      const cleanInvoiceDetails = {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+        billedBy: invoice.billedBy,
+        billedTo: invoice.billedTo,
+        totals: invoice.totals,
+        status: invoice.status,
+        department: invoice.department,
+        uploadedBy: invoice.uploadedBy,
+        assignedManager: invoice.assignedManager,
+        // Explicitly exclude fileData and other large fields
+        fileName: invoice.fileName,
+        fileSize: invoice.fileSize,
+        fileContentType: invoice.fileContentType
+      };
+
       const result = await this.sendEmail({
         to: manager.email,
         subject,
         text: content,
         templateData: {
-          invoiceDetails: invoice,
+          invoiceDetails: cleanInvoiceDetails,
           actionUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invoices/${invoice._id}`
         }
       });
@@ -187,12 +206,32 @@ class EmailService {
     
     // Send to all controllers
     for (const controller of controllers) {
+      // Create a clean invoice object without binary data for logging
+      const cleanInvoiceDetails = {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+        billedBy: invoice.billedBy,
+        billedTo: invoice.billedTo,
+        totals: invoice.totals,
+        status: invoice.status,
+        department: invoice.department,
+        uploadedBy: invoice.uploadedBy,
+        assignedManager: invoice.assignedManager,
+        approver: invoice.approver,
+        // Explicitly exclude fileData and other large fields
+        fileName: invoice.fileName,
+        fileSize: invoice.fileSize,
+        fileContentType: invoice.fileContentType
+      };
+
       const result = await this.sendEmail({
         to: controller.email,
         subject,
         text: content,
         templateData: {
-          invoiceDetails: invoice,
+          invoiceDetails: cleanInvoiceDetails,
           actionUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invoices/${invoice._id}`,
           escalationReason: isHighValue ? 'High Value Amount' : 'Management Escalation'
         }
@@ -221,12 +260,32 @@ class EmailService {
     const results = [];
     
     for (const user of users) {
+      // Create a clean invoice object without binary data for logging
+      const cleanInvoiceDetails = {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+        billedBy: invoice.billedBy,
+        billedTo: invoice.billedTo,
+        totals: invoice.totals,
+        status: invoice.status,
+        department: invoice.department,
+        uploadedBy: invoice.uploadedBy,
+        assignedManager: invoice.assignedManager,
+        approver: invoice.approver,
+        // Explicitly exclude fileData and other large fields
+        fileName: invoice.fileName,
+        fileSize: invoice.fileSize,
+        fileContentType: invoice.fileContentType
+      };
+
       const result = await this.sendEmail({
         to: user.email,
         subject,
         text: content,
         templateData: {
-          invoiceDetails: invoice
+          invoiceDetails: cleanInvoiceDetails
         }
       });
       results.push({ user: user.email, ...result });

@@ -77,7 +77,7 @@ const InvoiceSearch = () => {
       }
 
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/invoices?${params.toString()}`, {
+      const response = await axios.get(`/api/invoices?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -158,7 +158,7 @@ const InvoiceSearch = () => {
   const downloadInvoice = async (invoiceId, invoiceNumber) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/invoices/${invoiceId}/file`, {
+      const response = await axios.get(`/api/invoices/${invoiceId}/file`, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -221,7 +221,7 @@ const InvoiceSearch = () => {
             <h1 className="page-title">Search Invoices</h1>
             <div className="user-info">
               <p className="welcome-text">
-                Search and filter invoices across the system
+                Search and filter company invoices
               </p>
             </div>
           </div>

@@ -11,7 +11,8 @@ const {
   previewInvoice,
   saveConfirmedInvoice,
   getInvoiceFile,
-  getDepartmentAnalytics
+  getDepartmentAnalytics,
+  deleteInvoice
 } = require('../controllers/invoiceController');
 const { protect, managerOrHigher, controllerOrHigher, clerkOrHigher } = require('../middleware/authMiddleware');
 const { uploadMiddleware } = require('../middleware/uploadMiddleware');
@@ -47,5 +48,8 @@ router.put('/:id', clerkOrHigher, updateInvoice);  // Clerk can edit invoices
 // Approval workflow routes
 router.post('/:id/approve-reject', managerOrHigher, approveRejectInvoice);
 router.post('/:id/mark-paid', controllerOrHigher, markAsPaid);
+
+// Delete invoice route
+router.delete('/:id', deleteInvoice);
 
 module.exports = router;

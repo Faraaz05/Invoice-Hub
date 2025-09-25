@@ -9,7 +9,8 @@ import {
   CheckCircle,
   Eye,
   CreditCard,
-  Search
+  Search,
+  TrendingUp
 } from 'lucide-react';
 import { authUtils } from '../utils/auth';
 
@@ -72,17 +73,24 @@ function Sidebar() {
       
       // Controller specific items
       { 
-        path: '/invoices', 
-        label: 'Payment Processing', 
-        icon: CreditCard,
-        description: 'Mark invoices as paid',
+        path: '/invoices/search', 
+        label: 'Search Invoices', 
+        icon: Search,
+        description: 'Search company invoices',
         roles: ['controller']
       },
       { 
-        path: '/payments', 
-        label: 'Payment History', 
-        icon: BarChart3,
-        description: 'View payment records',
+        path: '/payment-processing', 
+        label: 'Payment Processing', 
+        icon: CreditCard,
+        description: 'Process company payments',
+        roles: ['controller']
+      },
+      { 
+        path: '/financial-analytics', 
+        label: 'Financial Analytics', 
+        icon: TrendingUp,
+        description: 'Company financial analytics',
         roles: ['controller']
       },
       

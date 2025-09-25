@@ -37,7 +37,7 @@ const DepartmentInvoices = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/invoices', {
+      const response = await axios.get('/api/invoices', {
         headers: { 'Authorization': `Bearer ${token}` },
         params: {
           department: currentUser?.department || '',

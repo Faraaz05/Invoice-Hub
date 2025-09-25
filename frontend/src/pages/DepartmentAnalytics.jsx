@@ -52,8 +52,8 @@ const DepartmentAnalytics = () => {
 
       // Build URL with optional timeframe parameter
       const url = selectedTimeframe === 'all' 
-        ? 'http://localhost:5000/api/invoices/analytics'
-        : `http://localhost:5000/api/invoices/analytics?timeframe=${selectedTimeframe}`;
+        ? '/api/invoices/analytics'
+        : `/api/invoices/analytics?timeframe=${selectedTimeframe}`;
 
       const response = await axios.get(url, {
         headers: {

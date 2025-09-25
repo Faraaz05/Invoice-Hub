@@ -87,7 +87,7 @@ const Dashboard = () => {
               <DashboardStats />
             </section>
             <section className="dashboard-section">
-              {currentUser?.role === 'clerk' ? (
+              {currentUser?.role === 'clerk' || currentUser?.role === 'controller' ? (
                 <InvoiceOverview />
               ) : (
                 <InvoiceList />

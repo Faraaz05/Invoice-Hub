@@ -37,7 +37,7 @@ const PendingApprovals = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/invoices?status=pending', {
+      const response = await axios.get('/api/invoices?status=pending', {
         headers: { 'Authorization': `Bearer ${token}` },
         params: {
           status: 'pending',
@@ -73,7 +73,7 @@ const PendingApprovals = () => {
       console.log('Approval request:', { invoiceId, originalAction: action, backendAction, comment });
       
       const response = await axios.post(
-        `http://localhost:5000/api/invoices/${invoiceId}/approve-reject`,
+        `/api/invoices/${invoiceId}/approve-reject`,
         {
           action: backendAction,
           comment
@@ -121,7 +121,7 @@ const PendingApprovals = () => {
   const handleDownloadInvoice = async (invoiceId, invoiceNumber) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/invoices/${invoiceId}/file`, {
+      const response = await axios.get(`/api/invoices/${invoiceId}/file`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },

@@ -2,7 +2,8 @@ const axios = require('axios');
 
 class GeminiClient {
   constructor() {
-    this.baseURL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+    // Use the working free API endpoint with gemini-2.5-flash
+    this.baseURL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
   }
 
   getApiKey() {
@@ -24,10 +25,10 @@ class GeminiClient {
       console.log('🔑 API Key Check:');
       if (!apiKey) {
         console.log('❌ No GEMINI_API_KEY found in environment');
-        return this.getFallbackResponse(rawText);
+        return this.getFallbackResponse(rawText, 'No GEMINI_API_KEY found in environment');
       } else if (apiKey === 'your_gemini_api_key_here') {
         console.log('❌ Default placeholder API key detected');
-        return this.getFallbackResponse(rawText);
+        return this.getFallbackResponse(rawText, 'Default placeholder API key detected');
       } else {
         console.log(`✅ API Key present: ${apiKey.substring(0, 10)}...${apiKey.slice(-4)}`);
         console.log(`📏 API Key length: ${apiKey.length} characters`);
@@ -43,14 +44,17 @@ class GeminiClient {
       console.log(`📏 Prompt length: ${prompt.length} characters`);
       
       console.log('\n🌐 Making Gemini API request...');
-      console.log(`🎯 URL: ${this.baseURL}`);
+      const fullUrl = `${this.baseURL}?key=${apiKey}`;
+      console.log(`🎯 Full URL: ${fullUrl.substring(0, fullUrl.indexOf('?key=') + 5)}***`);
+      console.log(`🔑 API Key length: ${apiKey.length} characters`);
+      console.log(`🔑 API Key prefix: ${apiKey.substring(0, 10)}...`);
       console.log('📦 Request payload structure:');
       console.log('   - contents[0].parts[0].text: [PROMPT]');
       
       const requestStartTime = Date.now();
       
       const response = await axios.post(
-        `${this.baseURL}?key=${apiKey}`,
+        fullUrl,
         {
           contents: [{
             parts: [{
@@ -117,6 +121,23 @@ class GeminiClient {
       if (error.response) {
         console.log(`   HTTP Status: ${error.response.status}`);
         console.log(`   Response data:`, error.response.data);
+        
+        // Provide specific error messages for common issues
+        if (error.response.status === 429) {
+          console.log('💡 QUOTA ISSUE: Gemini API quota exceeded');
+          console.log('   - Check your API key billing and quota limits');
+          console.log('   - Visit: https://ai.google.dev/gemini-api/docs/rate-limits');
+          return this.getFallbackResponse(rawText, 'Gemini API quota exceeded - check billing settings');
+        } else if (error.response.status === 403) {
+          console.log('💡 PERMISSION ISSUE: API key may be invalid or lacks permissions');
+          return this.getFallbackResponse(rawText, 'Gemini API key invalid or lacks permissions');
+        } else if (error.response.status === 404) {
+          console.log('💡 MODEL ISSUE: Model not found or not accessible');
+          return this.getFallbackResponse(rawText, 'Gemini model not found or not accessible');
+        } else if (error.response.status === 503) {
+          console.log('💡 SERVICE ISSUE: Gemini service temporarily unavailable');
+          return this.getFallbackResponse(rawText, 'Gemini service temporarily overloaded');
+        }
       }
       
       if (error.request) {
@@ -128,7 +149,7 @@ class GeminiClient {
       console.log('\n🔄 Falling back to basic OCR extraction...');
       
       // Return fallback response on error
-      return this.getFallbackResponse(rawText);
+      return this.getFallbackResponse(rawText, `API request failed: ${error.message}`);
     }
   }
 
@@ -259,6 +280,8 @@ If the text is not clearly an invoice, return a JSON with minimal fields and sum
       console.log('===============================\n');
       
       return {
+        success: true,
+        source: 'gemini',
         structuredJson: parsed,
         summary: summary
       };
@@ -282,6 +305,8 @@ If the text is not clearly an invoice, return a JSON with minimal fields and sum
           delete parsed.summary;
           
           return {
+            success: true,
+            source: 'gemini',
             structuredJson: parsed,
             summary: summary
           };
@@ -300,10 +325,14 @@ If the text is not clearly an invoice, return a JSON with minimal fields and sum
   /**
    * Fallback response when AI is not available or fails
    */
-  getFallbackResponse(rawText) {
+  getFallbackResponse(rawText, fallbackReason = 'AI analysis failed') {
     console.log('🔄 Using fallback invoice data extraction');
+    console.log(`⚠️  Fallback reason: ${fallbackReason}`);
     
     return {
+      success: false,
+      source: 'fallback',
+      fallbackReason: fallbackReason,
       structuredJson: {
         invoiceNumber: this.extractInvoiceNumber(rawText) || 'Pending Verification',
         invoiceDate: new Date().toISOString().split('T')[0],

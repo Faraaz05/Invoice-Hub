@@ -12,6 +12,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import PendingApprovals from './pages/PendingApprovals';
 import DepartmentInvoices from './pages/DepartmentInvoices';
 import DepartmentAnalytics from './pages/DepartmentAnalytics';
+import FinancialAnalytics from './pages/FinancialAnalytics';
+import PaymentProcessing from './pages/PaymentProcessing';
 import { authUtils } from './utils/auth';
 import './App.css';
 import './styles/globals.css';
@@ -47,7 +49,8 @@ function App() {
                   <Route path="/approvals" element={<PendingApprovals />} /> {/* Manager approval view */}
                   <Route path="/department-invoices" element={<DepartmentInvoices />} /> {/* Manager department invoices */}
                   <Route path="/department-analytics" element={<DepartmentAnalytics />} /> {/* Manager department analytics */}
-                  <Route path="/payments" element={<Dashboard />} /> {/* Controller payment view */}
+                  <Route path="/financial-analytics" element={<FinancialAnalytics />} /> {/* Controller financial analytics */}
+                  <Route path="/payment-processing" element={<PaymentProcessing />} /> {/* Controller payment processing */}
                   <Route path="/users" element={
                     <AdminOnlyRoute>
                       <AdminDashboard />

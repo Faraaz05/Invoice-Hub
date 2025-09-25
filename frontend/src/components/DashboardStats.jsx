@@ -24,7 +24,7 @@ const DashboardStats = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/invoices/dashboard/stats', {
+      const response = await axios.get('/api/invoices/dashboard/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

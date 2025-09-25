@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy Test</title>
+</head>
+<body>
+    <h1>Testing Vite Proxy</h1>
+    <button onclick="testDirectCall()">Test Direct Call (localhost:5000)</button>
+    <button onclick="testProxyCall()">Test Proxy Call (/api)</button>
+    <div id="results"></div>
+
+    <script>
+        async function testDirectCall() {
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML += `<p>Direct Call: SUCCESS - ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                document.getElementById('results').innerHTML += `<p>Direct Call: ERROR - ${error.message}</p>`;
+            }
+        }
+
+        async function testProxyCall() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML += `<p>Proxy Call: SUCCESS - ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                document.getElementById('results').innerHTML += `<p>Proxy Call: ERROR - ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

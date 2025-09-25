@@ -62,7 +62,7 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/auth/users', {
+      const response = await axios.get('/api/auth/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/auth/register', newUser, {
+      const response = await axios.post('/api/auth/register', newUser, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

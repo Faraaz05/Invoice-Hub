@@ -94,8 +94,11 @@ const getAllInvoices = async (req, res) => {
       // Managers see invoices assigned to them or from their department
       filter.assignedManager = req.user.id;
     } else if (req.user.role === 'controller') {
-      // Controllers see only approved invoices ready for payment
-      filter.status = 'approved';
+      // Controllers see approved and paid invoices by default, unless status is explicitly specified
+      if (!status) {
+        filter.status = { $in: ['approved', 'paid'] };
+      }
+      // If status is explicitly provided in query, respect that filter
     }
     // Clerks and Admins see all invoices (no additional filtering)
 
@@ -647,6 +650,9 @@ const uploadInvoice = async (req, res) => {
     // Analyze invoice with Gemini AI to extract structured data
     console.log('\n🤖 === AI ANALYSIS PHASE ===');
     let aiAnalysis;
+    let aiAnalysisSuccess = false;
+    let aiAnalysisError = null;
+    
     try {
       const aiStartTime = Date.now();
       console.log('🚀 Sending request to Gemini AI...');
@@ -655,15 +661,33 @@ const uploadInvoice = async (req, res) => {
       aiAnalysis = await analyzeInvoice(rawText);
       const aiDuration = Date.now() - aiStartTime;
       
-      console.log(`✅ AI Analysis Completed:`);
-      console.log(`   Processing Time: ${aiDuration}ms`);
-      console.log(`   Fields Extracted: ${Object.keys(aiAnalysis.structuredJson || {}).length}`);
-      console.log(`   Invoice Number: ${aiAnalysis.structuredJson?.invoiceNumber || 'Not detected'}`);
-      console.log(`   Grand Total: ₹${aiAnalysis.structuredJson?.totals?.grandTotal || 0}`);
+      // Check if AI analysis was successful (not fallback)
+      if (aiAnalysis.success !== false && aiAnalysis.source !== 'fallback') {
+        aiAnalysisSuccess = true;
+        console.log(`✅ GEMINI AI ANALYSIS SUCCESSFUL:`);
+        console.log(`   🚀 Processing Time: ${aiDuration}ms`);
+        console.log(`   📊 Fields Extracted: ${Object.keys(aiAnalysis.structuredJson || {}).length}`);
+        console.log(`   📋 Invoice Number: ${aiAnalysis.structuredJson?.invoiceNumber || 'Not detected'}`);
+        console.log(`   💰 Grand Total: ₹${aiAnalysis.structuredJson?.totals?.grandTotal || 0}`);
+        console.log(`   📝 Summary Generated: ${aiAnalysis.summary ? 'Yes' : 'No'}`);
+      } else {
+        aiAnalysisSuccess = false;
+        aiAnalysisError = 'AI analysis returned fallback data';
+        console.log(`⚠️  GEMINI AI ANALYSIS USED FALLBACK:`);
+        console.log(`   ⏱️  Processing Time: ${aiDuration}ms`);
+        console.log(`   📊 Fallback Fields: ${Object.keys(aiAnalysis.structuredJson || {}).length}`);
+        console.log(`   ℹ️  Reason: ${aiAnalysis.fallbackReason || 'Unknown'}`);
+      }
     } catch (aiError) {
-      console.error('❌ AI analysis failed:', aiError.message);
+      aiAnalysisSuccess = false;
+      aiAnalysisError = aiError.message;
+      console.error('❌ GEMINI AI ANALYSIS COMPLETELY FAILED:');
+      console.error(`   💥 Error: ${aiError.message}`);
+      console.error(`   🔄 Attempting fallback extraction...`);
+      
       // Continue with fallback data - the analyzeInvoice function handles fallbacks internally
       aiAnalysis = await analyzeInvoice(rawText); // This will return fallback data
+      console.log(`⚠️  Using fallback extraction with ${Object.keys(aiAnalysis.structuredJson || {}).length} basic fields`);
     }
 
     const structuredData = aiAnalysis.structuredJson;
@@ -924,10 +948,13 @@ const uploadInvoice = async (req, res) => {
         },
         aiAnalysis: {
           processed: true,
+          success: aiAnalysisSuccess,
+          error: aiAnalysisError,
           summary: aiSummary,
           fieldsExtracted: Object.keys(structuredData).length,
           itemsCount: structuredData.items?.length || 0,
-          grandTotal: structuredData.totals?.grandTotal || 0
+          grandTotal: structuredData.totals?.grandTotal || 0,
+          source: aiAnalysisSuccess ? 'gemini' : 'fallback'
         }
       }
     });
@@ -1071,16 +1098,29 @@ const previewInvoice = async (req, res) => {
     }
 
     // Analyze invoice with Gemini AI to extract structured data
-    console.log('\n🤖 === AI ANALYSIS PHASE ===');
+    console.log('\n🤖 === AI ANALYSIS PHASE (PREVIEW) ===');
     let aiAnalysis;
+    let aiAnalysisSuccess = false;
+    let aiAnalysisError = null;
+    
     try {
       const aiStartTime = Date.now();
       aiAnalysis = await analyzeInvoice(rawText);
       const aiDuration = Date.now() - aiStartTime;
       
-      console.log(`✅ AI Analysis Completed in ${aiDuration}ms`);
+      // Check if AI analysis was successful (not fallback)
+      if (aiAnalysis.success !== false && aiAnalysis.source !== 'fallback') {
+        aiAnalysisSuccess = true;
+        console.log(`✅ GEMINI AI PREVIEW ANALYSIS SUCCESSFUL in ${aiDuration}ms`);
+      } else {
+        aiAnalysisSuccess = false;
+        aiAnalysisError = 'AI analysis returned fallback data';
+        console.log(`⚠️  GEMINI AI PREVIEW USED FALLBACK in ${aiDuration}ms`);
+      }
     } catch (aiError) {
-      console.error('❌ AI analysis failed:', aiError.message);
+      aiAnalysisSuccess = false;
+      aiAnalysisError = aiError.message;
+      console.error('❌ GEMINI AI PREVIEW ANALYSIS FAILED:', aiError.message);
       aiAnalysis = await analyzeInvoice(rawText); // Fallback
     }
 
@@ -1132,9 +1172,12 @@ const previewInvoice = async (req, res) => {
         previewData,
         fileInfo: { originalName, size: fileSize, mimeType },
         aiAnalysis: {
+          success: aiAnalysisSuccess,
+          error: aiAnalysisError,
           summary: aiAnalysis.summary,
           fieldsExtracted: Object.keys(structuredData).length,
-          processingTime: totalDuration
+          processingTime: totalDuration,
+          source: aiAnalysisSuccess ? 'gemini' : 'fallback'
         }
       }
     });
@@ -1433,6 +1476,106 @@ const getDepartmentAnalytics = async (req, res) => {
   }
 };
 
+// Delete invoice (for clerks during manual verification)
+const deleteInvoice = async (req, res) => {
+  try {
+    console.log('\n🗑️  === INVOICE DELETION STARTED ===');
+    console.log(`👤 User: ${req.user?.name} (${req.user?.email}) - Role: ${req.user?.role}`);
+    console.log(`🆔 Invoice ID: ${req.params.id}`);
+
+    const invoice = await Invoice.findById(req.params.id);
+
+    if (!invoice) {
+      console.log('❌ Invoice not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Invoice not found'
+      });
+    }
+
+    // Permission checks
+    // Clerks can only delete invoices they uploaded and only if they're still pending
+    if (req.user.role === 'clerk') {
+      if (invoice.uploadedBy.toString() !== req.user.id) {
+        console.log('❌ Permission denied: Clerk can only delete own invoices');
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete invoices you uploaded'
+        });
+      }
+      
+      if (invoice.status !== 'pending') {
+        console.log(`❌ Permission denied: Cannot delete ${invoice.status} invoice`);
+        return res.status(400).json({
+          success: false,
+          message: 'You can only delete pending invoices. This invoice has already been processed.'
+        });
+      }
+    }
+    
+    // Managers can delete invoices in their department (pending only)
+    else if (req.user.role === 'manager') {
+      if (invoice.assignedManager.toString() !== req.user.id) {
+        console.log('❌ Permission denied: Manager can only delete invoices assigned to their department');
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete invoices assigned to your department'
+        });
+      }
+      
+      if (invoice.status !== 'pending') {
+        console.log(`❌ Permission denied: Cannot delete ${invoice.status} invoice`);
+        return res.status(400).json({
+          success: false,
+          message: 'You can only delete pending invoices'
+        });
+      }
+    }
+    
+    // Controllers and Admins can delete any invoice, but not if it's paid
+    else if (['controller', 'admin'].includes(req.user.role)) {
+      if (invoice.status === 'paid') {
+        console.log('❌ Permission denied: Cannot delete paid invoice');
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot delete invoices that have been marked as paid'
+        });
+      }
+    }
+    
+    // Anyone else has no delete permission
+    else {
+      console.log('❌ Permission denied: Insufficient role');
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to delete invoices'
+      });
+    }
+
+    console.log(`✅ Permission check passed for ${req.user.role}`);
+    console.log(`📋 Deleting invoice: ${invoice.invoiceNumber} (Status: ${invoice.status})`);
+
+    // Delete the invoice
+    await Invoice.findByIdAndDelete(req.params.id);
+
+    console.log(`✅ Invoice deleted successfully: ${invoice.invoiceNumber}`);
+    console.log('===============================================\n');
+
+    res.status(200).json({
+      success: true,
+      message: `Invoice ${invoice.invoiceNumber} deleted successfully`
+    });
+
+  } catch (error) {
+    console.error('Delete invoice error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting invoice',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createInvoice,
   getAllInvoices,
@@ -1445,5 +1588,6 @@ module.exports = {
   previewInvoice,
   saveConfirmedInvoice,
   getInvoiceFile,
-  getDepartmentAnalytics
+  getDepartmentAnalytics,
+  deleteInvoice
 };

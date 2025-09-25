@@ -13,7 +13,8 @@ import {
   Hash,
   Calendar,
   User,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react';
 import axios from 'axios';
 import { authUtils } from '../utils/auth';
@@ -28,6 +29,7 @@ const InvoiceUpload = () => {
   const [showVerificationForm, setShowVerificationForm] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [aiAnalysisStatus, setAiAnalysisStatus] = useState(null);
 
   const departments = [
     { value: 'Sales', label: 'Sales Department' },
@@ -76,6 +78,7 @@ const InvoiceUpload = () => {
 
     setLoading(true);
     setError('');
+    setAiAnalysisStatus(null);
 
     try {
       const formData = new FormData();
@@ -83,18 +86,29 @@ const InvoiceUpload = () => {
       formData.append('department', department);
 
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5000/api/invoices/upload', formData, {
+      const response = await axios.post('/api/invoices/upload', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          'Authorization': `Bearer ${token}`
+          // Don't set Content-Type - let browser set it automatically with boundary
         }
       });
 
       if (response.data.success) {
         setProcessedData(response.data.data);
+        
+        // Capture AI analysis status
+        const aiAnalysis = response.data.data.aiAnalysis;
+        setAiAnalysisStatus({
+          success: aiAnalysis.success,
+          error: aiAnalysis.error,
+          source: aiAnalysis.source,
+          fieldsExtracted: aiAnalysis.fieldsExtracted
+        });
+        
         // Extract the invoice data from the response
         const invoiceData = response.data.data.invoice;
         console.log('Invoice data from backend:', invoiceData);
+        console.log('AI Analysis Status:', aiAnalysis);
         console.log('Invoice dates:', {
           invoiceDate: invoiceData.invoiceDate,
           dueDate: invoiceData.dueDate
@@ -219,7 +233,7 @@ const InvoiceUpload = () => {
       
       // Since the invoice was already created during upload, we need to update it
       const invoiceId = processedData.invoice._id;
-      const response = await axios.put(`http://localhost:5000/api/invoices/${invoiceId}`, formattedData, {
+      const response = await axios.put(`/api/invoices/${invoiceId}`, formattedData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -233,6 +247,7 @@ const InvoiceUpload = () => {
         setProcessedData(null);
         setShowVerificationForm(false);
         setVerificationData(null);
+        setAiAnalysisStatus(null);
         
         // Show success message
         alert('Invoice saved successfully and sent for approval!');
@@ -268,6 +283,47 @@ const InvoiceUpload = () => {
     }
   };
 
+  const handleDeleteInvoice = async () => {
+    if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!processedData?.invoice?._id) {
+      setError('No invoice to delete');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const invoiceId = processedData.invoice._id;
+      
+      const response = await axios.delete(`/api/invoices/${invoiceId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Reset form
+        setFile(null);
+        setDepartment('');
+        setProcessedData(null);
+        setShowVerificationForm(false);
+        setVerificationData(null);
+        setAiAnalysisStatus(null);
+        setError('');
+        
+        alert('Invoice deleted successfully!');
+      } else {
+        setError(response.data.message || 'Failed to delete invoice');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to delete invoice';
+      setError(errorMessage);
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -295,6 +351,13 @@ const InvoiceUpload = () => {
                   Back to Upload
                 </button>
                 <button 
+                  onClick={handleDeleteInvoice}
+                  className="btn-danger"
+                >
+                  <Trash2 size={18} />
+                  Delete Invoice
+                </button>
+                <button 
                   onClick={handleSaveInvoice}
                   disabled={saving}
                   className="btn-primary"
@@ -310,6 +373,33 @@ const InvoiceUpload = () => {
             <div className="error-message">
               <AlertCircle size={16} />
               {error}
+            </div>
+          )}
+
+          {/* AI Analysis Status */}
+          {aiAnalysisStatus && (
+            <div className={`ai-analysis-status ${aiAnalysisStatus.success ? 'success' : 'warning'}`}>
+              <div className="ai-status-header">
+                {aiAnalysisStatus.success ? (
+                  <CheckCircle size={18} />
+                ) : (
+                  <AlertCircle size={18} />
+                )}
+                <h4>AI Analysis Status</h4>
+              </div>
+              <div className="ai-status-content">
+                {aiAnalysisStatus.success ? (
+                  <p>AI analysis successful! Extracted {aiAnalysisStatus.fieldsExtracted} fields automatically.</p>
+                ) : (
+                  <div>
+                    <p>AI analysis used fallback data extraction. Please verify all fields manually.</p>
+                    {aiAnalysisStatus.error && (
+                      <p className="ai-error-details">Reason: {aiAnalysisStatus.error}</p>
+                    )}
+                  </div>
+                )}
+                <small>Data source: {aiAnalysisStatus.source === 'gemini' ? 'Gemini AI' : 'Basic OCR Fallback'}</small>
+              </div>
             </div>
           )}
 

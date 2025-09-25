@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const financialAnalyticsRoutes = require('./routes/financialAnalyticsRoutes');
 const { createAdminUser } = require('./utils/adminSeeder');
 
 // Load environment variables
@@ -81,6 +82,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/financial-analytics', financialAnalyticsRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -110,6 +112,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('   Authentication: /api/auth/*');
   console.log('   Invoice Upload: POST /api/invoices/upload');
   console.log('   Invoice Routes: /api/invoices/*');
+  console.log('   Financial Analytics: GET /api/financial-analytics');
   
   console.log('\n✅ Server ready to accept connections');
   console.log('=====================================\n');
