@@ -6,8 +6,6 @@ import {
   FileText, 
   Users, 
   BarChart3,
-  Settings,
-  HelpCircle,
   CheckCircle,
   Eye,
   CreditCard
@@ -97,32 +95,7 @@ function Sidebar() {
 
   const navItems = getNavItemsForRole(userRole);
 
-  // Bottom navigation items - always visible but role-dependent
-  const getBottomNavItems = (role) => {
-    const items = [
-      { 
-        path: '/help', 
-        label: 'Help & Support', 
-        icon: HelpCircle,
-        description: 'Get assistance',
-        roles: ['admin', 'manager', 'controller', 'clerk']
-      }
-    ];
-
-    // Only show settings for admin
-    if (role === 'admin') {
-      items.unshift({
-        path: '/settings', 
-        label: 'Settings', 
-        icon: Settings,
-        description: 'System configuration'
-      });
-    }
-
-    return items;
-  };
-
-  const bottomNavItems = getBottomNavItems(userRole);
+  // No bottom navigation items needed
 
   const renderNavItem = (item) => {
     const IconComponent = item.icon;
@@ -168,11 +141,7 @@ function Sidebar() {
           </ul>
         </div>
         
-        <div className="nav-section nav-section-bottom">
-          <ul className="nav-list">
-            {bottomNavItems.map(renderNavItem)}
-          </ul>
-        </div>
+
       </nav>
     </aside>
   );

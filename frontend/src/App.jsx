@@ -52,8 +52,6 @@ function App() {
                     </AdminOnlyRoute>
                   } />
                   <Route path="/reports" element={<Dashboard />} /> {/* Admin reports placeholder */}
-                  <Route path="/settings" element={<Dashboard />} /> {/* Admin settings placeholder */}
-                  <Route path="/help" element={<Dashboard />} /> {/* Help page placeholder */}
                   
                   {/* Catch all route - redirect to dashboard */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
