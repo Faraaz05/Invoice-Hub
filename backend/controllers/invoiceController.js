@@ -147,6 +147,14 @@ const getInvoiceById = async (req, res) => {
 // Update invoice (for verification/editing)
 const updateInvoice = async (req, res) => {
   try {
+    console.log('\n🔄 === INVOICE UPDATE STARTED ===');
+    console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+    console.log(`👤 User: ${req.user?.name} (${req.user?.email}) - Role: ${req.user?.role}`);
+    console.log(`🆔 Invoice ID: ${req.params.id}`);
+    console.log(`📦 Request Body:`, JSON.stringify(req.body, null, 2));
+    console.log(`🗓️ Raw Invoice Date: "${req.body.invoiceDate}" (${typeof req.body.invoiceDate})`);
+    console.log(`🗓️ Raw Due Date: "${req.body.dueDate}" (${typeof req.body.dueDate})`);
+
     const invoice = await Invoice.findById(req.params.id);
 
     if (!invoice) {
@@ -171,9 +179,84 @@ const updateInvoice = async (req, res) => {
       });
     }
 
+    // Parse dates properly before updating
+    const updateData = { ...req.body };
+    
+    // Enhanced date parsing function for updates
+    const parseUpdateDate = (dateValue) => {
+      if (!dateValue) return null;
+      
+      // If it's already a Date object, return it
+      if (dateValue instanceof Date) {
+        return dateValue;
+      }
+      
+      // If it's a string, try to parse it
+      if (typeof dateValue === 'string') {
+        console.log(`🔄 Parsing date string: "${dateValue}"`);
+        
+        // Try MM/DD/YYYY format first (common in US)
+        const mmddyyyyMatch = dateValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (mmddyyyyMatch) {
+          const [, month, day, year] = mmddyyyyMatch;
+          const parsedDate = new Date(year, month - 1, day);
+          console.log(`✅ Parsed MM/DD/YYYY: ${dateValue} -> ${parsedDate.toISOString()}`);
+          return parsedDate;
+        }
+        
+        // Try DD/MM/YYYY format
+        const ddmmyyyyMatch = dateValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (ddmmyyyyMatch) {
+          const [, day, month, year] = ddmmyyyyMatch;
+          // Assume DD/MM/YYYY if day > 12 or if this makes more sense
+          if (parseInt(day) > 12 || parseInt(month) <= 12) {
+            const parsedDate = new Date(year, month - 1, day);
+            console.log(`✅ Parsed DD/MM/YYYY: ${dateValue} -> ${parsedDate.toISOString()}`);
+            return parsedDate;
+          }
+        }
+        
+        // Try ISO format or other standard formats
+        const parsedDate = new Date(dateValue);
+        if (!isNaN(parsedDate.getTime())) {
+          console.log(`✅ Parsed ISO/standard: ${dateValue} -> ${parsedDate.toISOString()}`);
+          return parsedDate;
+        }
+      }
+      
+      console.log(`❌ Failed to parse date: ${dateValue} (${typeof dateValue})`);
+      return null;
+    };
+
+    // Parse invoice date if provided
+    if (updateData.invoiceDate) {
+      updateData.invoiceDate = parseUpdateDate(updateData.invoiceDate);
+    }
+    
+    // Parse due date if provided
+    if (updateData.dueDate) {
+      updateData.dueDate = parseUpdateDate(updateData.dueDate);
+    }
+
+    console.log('\n📅 === UPDATE DATE PROCESSING ===');
+    console.log(`Invoice Date: ${updateData.invoiceDate ? updateData.invoiceDate.toISOString() : 'Not provided'}`);
+    console.log(`Due Date: ${updateData.dueDate ? updateData.dueDate.toISOString() : 'Not provided'}`);
+    
+    // Validate dates before update
+    if (updateData.invoiceDate && updateData.dueDate) {
+      if (updateData.dueDate < updateData.invoiceDate) {
+        console.log('❌ Due date validation failed in controller');
+        return res.status(400).json({
+          success: false,
+          message: `Due date (${updateData.dueDate.toDateString()}) cannot be before invoice date (${updateData.invoiceDate.toDateString()})`
+        });
+      }
+      console.log('✅ Date validation passed in controller');
+    }
+
     const updatedInvoice = await Invoice.findByIdAndUpdate(
       req.params.id,
-      { ...req.body },
+      updateData,
       { new: true, runValidators: true }
     ).populate('uploadedBy', 'name email role')
      .populate('approver', 'name email role');
