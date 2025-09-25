@@ -1,0 +1,362 @@
+/* Invoice Overview Component Styles */
+
+.invoice-overview {
+  background-color: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f8f9fa;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.search-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  transition: all 150ms ease-in-out;
+}
+
+.search-link:hover {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+/* States */
+.loading-state,
+.no-invoices-state {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.loading-state svg,
+.no-invoices-state svg {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.loading-state h3,
+.no-invoices-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.loading-state p,
+.no-invoices-state p {
+  color: #4b5563;
+  margin: 0;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-message p {
+  color: #dc2626;
+  margin: 0;
+  font-weight: 500;
+}
+
+.retry-btn {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease-in-out;
+}
+
+.retry-btn:hover {
+  background-color: #b91c1c;
+}
+
+/* Invoice Table */
+.invoice-table-container {
+  overflow: hidden;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-table th {
+  background-color: #f8f9fa;
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.invoice-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.invoice-table tr:hover {
+  background-color: #f1f3f5;
+}
+
+.invoice-table tr:last-child td {
+  border-bottom: none;
+}
+
+.invoice-number {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospaced;
+  font-weight: 600;
+  color: #111827;
+}
+
+.vendor-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.department-badge {
+  display: inline-block;
+  background-color: #f1f3f5;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.amount {
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-orange {
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.status-green {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.status-red {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.status-blue {
+  background-color: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+
+.action-btn:hover {
+  background-color: #f1f3f5;
+  border-color: #d4d4d8;
+}
+
+.view-btn:hover {
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.download-btn:hover {
+  color: #16a34a;
+  border-color: #16a34a;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f8f9fa;
+}
+
+.pagination-btn {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+  padding: 0 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f1f3f5;
+  border-color: #d4d4d8;
+}
+
+.pagination-btn:disabled {
+  background-color: #f8f9fa;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* View All Link */
+.view-all-link {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f8f9fa;
+  text-align: center;
+}
+
+.view-all-btn {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 150ms ease-in-out;
+}
+
+.view-all-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .invoice-table-container {
+    overflow-x: auto;
+  }
+  
+  .invoice-table {
+    min-width: 600px;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-header {
+    padding: 16px;
+  }
+  
+  .invoice-table th,
+  .invoice-table td {
+    padding: 8px 12px;
+  }
+  
+  .pagination {
+    padding: 12px 16px;
+  }
+}

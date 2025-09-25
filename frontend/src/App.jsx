@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import InvoiceUpload from './pages/InvoiceUpload';
 import InvoiceDetails from './pages/InvoiceDetails';
+import InvoiceSearch from './pages/InvoiceSearch';
 import AdminDashboard from './pages/AdminDashboard';
 import PendingApprovals from './pages/PendingApprovals';
 import DepartmentInvoices from './pages/DepartmentInvoices';
@@ -42,6 +43,7 @@ function App() {
                   <Route path="/invoices/upload" element={<InvoiceUpload />} />
                   <Route path="/invoices/:id" element={<InvoiceDetails />} />
                   <Route path="/invoices" element={<Dashboard />} /> {/* Reuse dashboard for invoice list */}
+                  <Route path="/invoices/search" element={<InvoiceSearch />} /> {/* Clerk invoice search */}
                   <Route path="/approvals" element={<PendingApprovals />} /> {/* Manager approval view */}
                   <Route path="/department-invoices" element={<DepartmentInvoices />} /> {/* Manager department invoices */}
                   <Route path="/department-analytics" element={<DepartmentAnalytics />} /> {/* Manager department analytics */}

@@ -8,7 +8,8 @@ import {
   BarChart3,
   CheckCircle,
   Eye,
-  CreditCard
+  CreditCard,
+  Search
 } from 'lucide-react';
 import { authUtils } from '../utils/auth';
 
@@ -36,6 +37,13 @@ function Sidebar() {
         label: 'Upload Invoice', 
         icon: Upload,
         description: 'Add new invoices',
+        roles: ['clerk']
+      },
+      { 
+        path: '/invoices/search', 
+        label: 'Search Invoices', 
+        icon: Search,
+        description: 'Search & filter invoices',
         roles: ['clerk']
       },
       

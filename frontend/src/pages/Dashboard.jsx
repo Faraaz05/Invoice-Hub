@@ -2,8 +2,10 @@ import React from 'react';
 import { authUtils } from '../utils/auth';
 import DashboardStats from '../components/DashboardStats';
 import InvoiceList from '../components/InvoiceList';
+import InvoiceOverview from '../components/InvoiceOverview';
 import '../styles/dashboard.css';
 import '../styles/invoice-list.css';
+import '../styles/invoice-overview.css';
 
 const Dashboard = () => {
   const currentUser = authUtils.getCurrentUser();
@@ -85,7 +87,11 @@ const Dashboard = () => {
               <DashboardStats />
             </section>
             <section className="dashboard-section">
-              <InvoiceList />
+              {currentUser?.role === 'clerk' ? (
+                <InvoiceOverview />
+              ) : (
+                <InvoiceList />
+              )}
             </section>
           </>
         )}
