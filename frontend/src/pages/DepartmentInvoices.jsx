@@ -218,7 +218,7 @@ const DepartmentInvoices = () => {
         </div>
       </div>
 
-      {/* Invoices Table */}
+      {/* Invoices List */}
       <div className="invoices-container">
         {filteredInvoices.length === 0 ? (
           <div className="no-invoices">
@@ -227,72 +227,70 @@ const DepartmentInvoices = () => {
             <p>No invoices match your current filters.</p>
           </div>
         ) : (
-          <div className="invoices-table-container">
-            <table className="invoices-table">
-              <thead>
-                <tr>
-                  <th>Invoice Details</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Due Date</th>
-                  <th>Submitted By</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map(invoice => (
-                  <tr key={invoice._id}>
-                    <td>
-                      <div className="invoice-details">
-                        <div className="vendor-name">{invoice.billedBy?.name || 'Unknown Vendor'}</div>
-                        <div className="invoice-meta">
-                          <span className="invoice-number">#{invoice.invoiceNumber}</span>
-                          <span className="created-date">
-                            Created {formatDate(invoice.createdAt || invoice.invoiceDate)}
-                          </span>
-                        </div>
+          <div className="invoices-list-container">
+            {/* Header Row */}
+            <div className="invoices-header">
+              <div className="header-cell invoice-details-header">Invoice Details</div>
+              <div className="header-cell amount-header">Amount</div>
+              <div className="header-cell status-header">Status</div>
+              <div className="header-cell date-header">Due Date</div>
+              <div className="header-cell user-header">Submitted By</div>
+              <div className="header-cell actions-header">Actions</div>
+            </div>
+            
+            {/* Invoice Rows */}
+            <div className="invoices-list">
+              {filteredInvoices.map(invoice => (
+                <div key={invoice._id} className="invoice-row">
+                  <div className="invoice-cell invoice-details-cell">
+                    <div className="invoice-details">
+                      <div className="vendor-name">{invoice.billedBy?.name || 'Unknown Vendor'}</div>
+                      <div className="invoice-meta">
+                        <span className="invoice-number">#{invoice.invoiceNumber}</span>
+                        <span className="created-date">
+                          Created {formatDate(invoice.createdAt || invoice.invoiceDate)}
+                        </span>
                       </div>
-                    </td>
-                    <td>
-                      <div className="amount-cell">
-                        <DollarSign size={16} />
-                        <span className="amount">{formatCurrency(invoice.totals?.grandTotal || 0)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={getStatusBadgeClass(invoice.status)}>
-                        {getStatusIcon(invoice.status)}
-                        <span>{invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="date-cell">
-                        <Calendar size={16} />
-                        <span>{invoice.dueDate ? formatDate(invoice.dueDate) : 'No due date'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="user-cell">
-                        <User size={16} />
-                        <span>{invoice.uploadedBy?.name || 'Unknown'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => {
-                          setSelectedInvoice(invoice);
-                          setShowModal(true);
-                        }}
-                        className="view-details-btn"
-                      >
-                        <Eye size={16} />
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                  
+                  <div className="invoice-cell amount-cell">
+                    <DollarSign size={16} />
+                    <span className="amount">{formatCurrency(invoice.totals?.grandTotal || 0)}</span>
+                  </div>
+                  
+                  <div className="invoice-cell status-cell">
+                    <div className={getStatusBadgeClass(invoice.status)}>
+                      {getStatusIcon(invoice.status)}
+                      <span>{invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="invoice-cell date-cell">
+                    <Calendar size={16} />
+                    <span>{invoice.dueDate ? formatDate(invoice.dueDate) : 'No due date'}</span>
+                  </div>
+                  
+                  <div className="invoice-cell user-cell">
+                    <User size={16} />
+                    <span>{invoice.uploadedBy?.name || 'Unknown'}</span>
+                  </div>
+                  
+                  <div className="invoice-cell actions-cell">
+                    <button
+                      onClick={() => {
+                        setSelectedInvoice(invoice);
+                        setShowModal(true);
+                      }}
+                      className="view-details-btn"
+                    >
+                      <Eye size={16} />
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

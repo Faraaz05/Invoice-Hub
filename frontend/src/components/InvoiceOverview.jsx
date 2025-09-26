@@ -76,10 +76,20 @@ const InvoiceOverview = () => {
         }
       });
 
+      // Extract filename from Content-Disposition header or fallback to invoice number
+      let filename = `${invoiceNumber}.pdf`; // fallback
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${invoiceNumber}.pdf`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -191,7 +201,9 @@ const InvoiceOverview = () => {
                 <tr key={invoice._id}>
                   <td className="invoice-number">{invoice.invoiceNumber}</td>
                   <td>{formatDate(invoice.invoiceDate)}</td>
-                  <td className="vendor-name">{invoice.billedBy?.name || 'N/A'}</td>
+                  <td>
+                    <span className="vendor-name">{invoice.billedBy?.name || 'N/A'}</span>
+                  </td>
                   <td>
                     <span className="department-badge">{invoice.department}</span>
                   </td>
@@ -204,14 +216,14 @@ const InvoiceOverview = () => {
                         className="action-btn view-btn"
                         title="View Invoice"
                       >
-                        <Eye size={16} />
+                        <Eye size={20} />
                       </button>
                       <button
                         onClick={() => downloadInvoice(invoice._id, invoice.invoiceNumber)}
                         className="action-btn download-btn"
                         title="Download Invoice"
                       >
-                        <Download size={16} />
+                        <span style={{ fontSize: '18px', fontWeight: 'bold' }}>↓</span>
                       </button>
                     </div>
                   </td>

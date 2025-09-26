@@ -128,7 +128,7 @@ const DashboardStats = () => {
         })}
       </div>
 
-      {stats.recentInvoices && stats.recentInvoices.length > 0 && (
+      {/* {stats.recentInvoices && stats.recentInvoices.length > 0 && (
         <div className="recent-invoices">
           <div className="recent-invoices-card">
             <div className="recent-invoices-header">
@@ -156,7 +156,7 @@ const DashboardStats = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

@@ -298,11 +298,13 @@
   border: 1px solid var(--color-feedback-error);
   background-color: var(--color-feedback-error);
   color: white;
+  background-color: #b91c1c;
 }
 
 .btn-danger:hover {
   background-color: #b91c1c;
-  border-color: #b91c1c;
+  border-color: #c94d4d;
+  color: white;
 }
 
 /* Form Elements */

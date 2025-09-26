@@ -26,12 +26,6 @@ function Header() {
           <span className="header-subtitle">Invoice Management System</span>
         </div>
         <div className="header-actions">
-          <button className="header-action-btn" title="Notifications">
-            <Bell size={18} />
-          </button>
-          <button className="header-action-btn" title="Settings">
-            <Settings size={18} />
-          </button>
           <div className="header-user-menu">
             <button className="header-user-btn" title={`Logged in as ${currentUser?.email || 'User'}`}>
               <User size={18} />

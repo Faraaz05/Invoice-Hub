@@ -242,6 +242,7 @@
   color: #4b5563;
   cursor: pointer;
   transition: all 150ms ease-in-out;
+  padding: 0;
 }
 
 .action-btn:hover {

@@ -71,10 +71,20 @@ const InvoiceDetails = () => {
         }
       });
 
+      // Extract filename from Content-Disposition header or fallback to invoice number
+      let filename = `${invoice.invoiceNumber}.pdf`; // fallback
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${invoice.invoiceNumber}.pdf`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();

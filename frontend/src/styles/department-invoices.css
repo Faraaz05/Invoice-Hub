@@ -3,6 +3,8 @@
   background-color: var(--color-bg-primary);
   min-height: calc(100vh - 72px);
   padding: var(--space-6);
+  /* Ensure consistent width calculations */
+  box-sizing: border-box;
 }
 
 /* Loading State */
@@ -33,6 +35,7 @@
 /* Page Header */
 .page-header {
   margin-bottom: var(--space-6);
+  width: 100%;
 }
 
 .header-main {
@@ -40,6 +43,9 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-4);
+  width: 100%;
+  /* Remove any flex shrinking that might affect width */
+  flex-shrink: 0;
 }
 
 .page-title {
@@ -209,46 +215,94 @@
   border-color: var(--color-primary);
 }
 
-/* Invoices Table */
+/* Invoices List with Flexbox */
 .invoices-container {
   background-color: var(--color-bg-primary);
+  margin-top: var(--space-5);
+  width: 100%;
 }
 
-.invoices-table-container {
+.invoices-list-container {
   background-color: var(--color-bg-primary);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-}
-
-.invoices-table {
   width: 100%;
-  border-collapse: collapse;
+  box-sizing: border-box;
 }
 
-.invoices-table th {
+/* Header Row */
+.invoices-header {
+  display: flex;
   background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-cell {
   padding: var(--space-4);
-  text-align: left;
   font-weight: 600;
   font-size: var(--font-size-small);
   color: var(--color-text-primary);
-  border-bottom: 1px solid var(--color-border);
+  box-sizing: border-box;
 }
 
-.invoices-table td {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
+/* Fixed Column Widths using Flexbox */
+.invoice-details-header,
+.invoice-details-cell {
+  flex: 0 0 30%; /* Invoice Details */
 }
 
-.invoices-table tr:hover {
+.amount-header,
+.amount-cell {
+  flex: 0 0 15%; /* Amount */
+}
+
+.status-header,
+.status-cell {
+  flex: 0 0 12%; /* Status */
+}
+
+.date-header,
+.date-cell {
+  flex: 0 0 15%; /* Due Date */
+}
+
+.user-header,
+.user-cell {
+  flex: 0 0 18%; /* Submitted By */
+}
+
+.actions-header,
+.actions-cell {
+  flex: 0 0 10%; /* Actions */
+}
+
+/* Invoice Rows */
+.invoices-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-row {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 150ms ease-in-out;
+}
+
+.invoice-row:hover {
   background-color: var(--color-bg-tertiary);
 }
 
-.invoices-table tr:last-child td {
+.invoice-row:last-child {
   border-bottom: none;
+}
+
+.invoice-cell {
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 /* Table Cell Styles */

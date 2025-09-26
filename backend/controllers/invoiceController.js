@@ -590,6 +590,24 @@ const uploadInvoice = async (req, res) => {
     const fs = require('fs');
     const fileBuffer = fs.readFileSync(filePath);
     console.log(`💾 File buffer created: ${(fileBuffer.length / 1024).toFixed(2)} KB`);
+    
+    // Debug: Check file signature to verify it's actually an image
+    const fileSignature = fileBuffer.slice(0, 4).toString('hex');
+    console.log(`🔍 File signature (first 4 bytes): ${fileSignature}`);
+    
+    // Common file signatures:
+    // JPEG: FFD8FF
+    // PNG: 89504E47
+    // PDF: 25504446
+    if (fileSignature.startsWith('ffd8ff')) {
+      console.log('✅ Confirmed: File is JPEG format');
+    } else if (fileSignature.startsWith('89504e47')) {
+      console.log('✅ Confirmed: File is PNG format');
+    } else if (fileSignature.startsWith('25504446')) {
+      console.log('⚠️  WARNING: File signature indicates PDF format!');
+    } else {
+      console.log(`❓ Unknown file signature: ${fileSignature}`);
+    }
 
     // Extract text from the uploaded file
     let extractionResult;
@@ -997,11 +1015,34 @@ const getInvoiceFile = async (req, res) => {
     // All authenticated users can download invoice files
     // (Removed clerk restriction - clerks can download any invoice)
 
-    // Set appropriate headers
+    // Debug logging for file download
+    console.log(`\n📥 === FILE DOWNLOAD REQUEST ===`);
+    console.log(`📄 File Name: ${invoice.fileName}`);
+    console.log(`🎯 Content Type: ${invoice.fileContentType}`);
+    console.log(`📊 File Size: ${invoice.fileSize} bytes`);
+    console.log(`📁 Buffer Length: ${invoice.fileData?.length} bytes`);
+    
+    // Check file signature of stored data
+    if (invoice.fileData && invoice.fileData.length > 4) {
+      const storedSignature = invoice.fileData.slice(0, 4).toString('hex');
+      console.log(`🔍 Stored file signature: ${storedSignature}`);
+      
+      if (storedSignature.startsWith('ffd8ff')) {
+        console.log('✅ Stored data is JPEG format');
+      } else if (storedSignature.startsWith('89504e47')) {
+        console.log('✅ Stored data is PNG format');
+      } else if (storedSignature.startsWith('25504446')) {
+        console.log('⚠️  WARNING: Stored data has PDF signature!');
+      } else {
+        console.log(`❓ Unknown stored signature: ${storedSignature}`);
+      }
+    }
+
+    // Set appropriate headers for download
     res.set({
       'Content-Type': invoice.fileContentType,
       'Content-Length': invoice.fileSize,
-      'Content-Disposition': `inline; filename="${invoice.fileName}"`,
+      'Content-Disposition': `attachment; filename="${invoice.fileName}"`,
       'Cache-Control': 'private, max-age=3600' // Cache for 1 hour
     });
 
