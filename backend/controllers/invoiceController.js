@@ -177,7 +177,6 @@ const updateInvoice = async (req, res) => {
     console.log(`📅 Timestamp: ${new Date().toISOString()}`);
     console.log(`👤 User: ${req.user?.name} (${req.user?.email}) - Role: ${req.user?.role}`);
     console.log(`🆔 Invoice ID: ${req.params.id}`);
-    console.log(`📦 Request Body:`, JSON.stringify(req.body, null, 2));
     console.log(`🗓️ Raw Invoice Date: "${req.body.invoiceDate}" (${typeof req.body.invoiceDate})`);
     console.log(`🗓️ Raw Due Date: "${req.body.dueDate}" (${typeof req.body.dueDate})`);
 

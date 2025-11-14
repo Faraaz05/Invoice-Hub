@@ -1,13 +1,21 @@
-const axios = require('axios');
+const { GoogleGenAI } = require('@google/genai');
 
 class GeminiClient {
   constructor() {
-    // Use the working free API endpoint with gemini-2.5-flash
-    this.baseURL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    this.modelName = 'gemini-2.5-flash';
+    this.maxRetries = 3;
+    this.retryDelay = 1000; // Start with 1 second
   }
 
   getApiKey() {
     return process.env.GEMINI_API_KEY;
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -25,9 +33,17 @@ class GeminiClient {
       console.log('🔑 API Key Check:');
       if (!apiKey) {
         console.log('❌ No GEMINI_API_KEY found in environment');
+        // Try OpenRouter before final fallback
+        const promptNoKey = this.buildAnalysisPrompt(rawText);
+        const orResultNoKey = await this.tryOpenRouter(promptNoKey, rawText, 'No GEMINI_API_KEY found');
+        if (orResultNoKey) return orResultNoKey;
         return this.getFallbackResponse(rawText, 'No GEMINI_API_KEY found in environment');
       } else if (apiKey === 'your_gemini_api_key_here') {
         console.log('❌ Default placeholder API key detected');
+        // Try OpenRouter before final fallback
+        const promptBadKey = this.buildAnalysisPrompt(rawText);
+        const orResultBadKey = await this.tryOpenRouter(promptBadKey, rawText, 'Default placeholder API key');
+        if (orResultBadKey) return orResultBadKey;
         return this.getFallbackResponse(rawText, 'Default placeholder API key detected');
       } else {
         console.log(`✅ API Key present: ${apiKey.substring(0, 10)}...${apiKey.slice(-4)}`);
@@ -43,63 +59,69 @@ class GeminiClient {
       const prompt = this.buildAnalysisPrompt(rawText);
       console.log(`📏 Prompt length: ${prompt.length} characters`);
       
-      console.log('\n🌐 Making Gemini API request...');
-      const fullUrl = `${this.baseURL}?key=${apiKey}`;
-      console.log(`🎯 Full URL: ${fullUrl.substring(0, fullUrl.indexOf('?key=') + 5)}***`);
-      console.log(`🔑 API Key length: ${apiKey.length} characters`);
-      console.log(`🔑 API Key prefix: ${apiKey.substring(0, 10)}...`);
-      console.log('📦 Request payload structure:');
-      console.log('   - contents[0].parts[0].text: [PROMPT]');
+      console.log(`\n🌐 Making Gemini API request with ${this.modelName}...`);
       
       const requestStartTime = Date.now();
       
-      const response = await axios.post(
-        fullUrl,
-        {
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 30000 // 30 seconds timeout
+      // Initialize Google Gen AI
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      
+      // Make the API call with retry logic
+      let response;
+      let attempt = 1;
+      
+      while (attempt <= this.maxRetries) {
+        try {
+          console.log(`� API Request attempt ${attempt}/${this.maxRetries}`);
+          
+          response = await ai.models.generateContent({
+            model: this.modelName,
+            contents: prompt
+          });
+          
+          break; // Success, exit retry loop
+          
+        } catch (error) {
+          const shouldRetry = attempt < this.maxRetries && 
+                             (error.message?.includes('503') || 
+                              error.message?.includes('429') || 
+                              error.message?.includes('500') ||
+                              error.message?.includes('overloaded'));
+          
+          if (shouldRetry) {
+            const delay = this.retryDelay * Math.pow(2, attempt - 1);
+            console.log(`⏳ Retry ${attempt}/${this.maxRetries} after ${delay}ms`);
+            await this.sleep(delay);
+            attempt++;
+          } else {
+            // If we can't/shouldn't retry Gemini, try OpenRouter fallback immediately
+            console.log('🔁 Switching to OpenRouter due to Gemini error:', error.message);
+            const orResultMid = await this.tryOpenRouter(prompt, rawText, `Gemini error (no-retry): ${error.message}`);
+            if (orResultMid) return orResultMid;
+            throw error;
+          }
         }
-      );
+      }
 
       const requestDuration = Date.now() - requestStartTime;
       console.log(`\n📡 API Response received in ${requestDuration}ms`);
-      console.log(`📊 Response status: ${response.status} ${response.statusText}`);
-      console.log('📋 Response structure:');
-      console.log('   - data:', !!response.data);
-      console.log('   - candidates:', response.data?.candidates?.length || 0);
+      console.log(`📊 Response received successfully`);
       
-      if (response.data?.candidates?.[0]) {
-        const candidate = response.data.candidates[0];
-        console.log('   - content:', !!candidate.content);
-        console.log('   - parts:', candidate.content?.parts?.length || 0);
-        console.log('   - finishReason:', candidate.finishReason || 'none');
-        
-        if (candidate.content?.parts?.[0]?.text) {
-          const aiResponseText = candidate.content.parts[0].text;
-          console.log(`   - response length: ${aiResponseText.length} characters`);
-          console.log(`   - first 200 chars: ${aiResponseText.substring(0, 200)}...`);
-        }
-      }
-
-      const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const aiResponseText = response.text;
       
-      if (!aiResponse) {
+      if (!aiResponseText) {
         console.log('❌ No AI response text found in API response');
-        console.log('Full response data:', JSON.stringify(response.data, null, 2));
+        // Attempt OpenRouter before failing
+        const orResultEmpty = await this.tryOpenRouter(prompt, rawText, 'Gemini returned empty response');
+        if (orResultEmpty) return orResultEmpty;
         throw new Error('Invalid response from Gemini API - no text content');
       }
 
+      console.log(`📏 Response length: ${aiResponseText.length} characters`);
+      console.log(`🔤 First 200 chars: ${aiResponseText.substring(0, 200)}...`);
+
       console.log('\n🔍 Parsing AI response...');
-      const result = this.parseAIResponse(aiResponse);
+      const result = this.parseAIResponse(aiResponseText);
       
       const totalDuration = Date.now() - startTime;
       console.log(`\n✅ Gemini AI analysis completed in ${totalDuration}ms`);
@@ -116,40 +138,93 @@ class GeminiClient {
       console.log('💥 Error details:');
       console.log(`   Name: ${error.name}`);
       console.log(`   Message: ${error.message}`);
-      console.log(`   Code: ${error.code || 'No code'}`);
       
-      if (error.response) {
-        console.log(`   HTTP Status: ${error.response.status}`);
-        console.log(`   Response data:`, error.response.data);
-        
-        // Provide specific error messages for common issues
-        if (error.response.status === 429) {
-          console.log('💡 QUOTA ISSUE: Gemini API quota exceeded');
-          console.log('   - Check your API key billing and quota limits');
-          console.log('   - Visit: https://ai.google.dev/gemini-api/docs/rate-limits');
-          return this.getFallbackResponse(rawText, 'Gemini API quota exceeded - check billing settings');
-        } else if (error.response.status === 403) {
-          console.log('💡 PERMISSION ISSUE: API key may be invalid or lacks permissions');
-          return this.getFallbackResponse(rawText, 'Gemini API key invalid or lacks permissions');
-        } else if (error.response.status === 404) {
-          console.log('💡 MODEL ISSUE: Model not found or not accessible');
-          return this.getFallbackResponse(rawText, 'Gemini model not found or not accessible');
-        } else if (error.response.status === 503) {
-          console.log('💡 SERVICE ISSUE: Gemini service temporarily unavailable');
-          return this.getFallbackResponse(rawText, 'Gemini service temporarily overloaded');
-        }
+      // Handle different error types
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        console.log('💡 QUOTA ISSUE: Gemini API quota exceeded');
+        console.log('   - Attempting OpenRouter fallback...');
+        const prompt = this.buildAnalysisPrompt(rawText);
+        const orResult = await this.tryOpenRouter(prompt, rawText, 'Gemini quota exceeded');
+        if (orResult) return orResult;
+      } else if (error.message?.includes('403') || error.message?.includes('API key not valid')) {
+        console.log('💡 PERMISSION ISSUE: API key may be invalid');
+        const prompt = this.buildAnalysisPrompt(rawText);
+        const orResult = await this.tryOpenRouter(prompt, rawText, 'Gemini API key invalid');
+        if (orResult) return orResult;
+      } else if (error.message?.includes('404') || error.message?.includes('not found')) {
+        console.log('💡 MODEL ISSUE: Model not found or API not enabled');
+        const prompt = this.buildAnalysisPrompt(rawText);
+        const orResult = await this.tryOpenRouter(prompt, rawText, 'Gemini model not accessible');
+        if (orResult) return orResult;
+      } else if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+        console.log('💡 SERVICE ISSUE: Gemini service temporarily unavailable');
+        const prompt = this.buildAnalysisPrompt(rawText);
+        const orResult = await this.tryOpenRouter(prompt, rawText, 'Gemini service overloaded');
+        if (orResult) return orResult;
       }
       
-      if (error.request) {
-        console.log('   Request made but no response received');
-        console.log(`   Request URL: ${error.config?.url || 'unknown'}`);
-      }
-      
-      console.log(`   Stack trace: ${error.stack}`);
+      console.log(`   Stack: ${error.stack}`);
       console.log('\n🔄 Falling back to basic OCR extraction...');
       
       // Return fallback response on error
       return this.getFallbackResponse(rawText, `API request failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Try OpenRouter as a fallback LLM provider
+   * This uses dynamic import to work in CommonJS and ESM environments.
+   * @param {string} prompt - The analysis prompt
+   * @param {string} rawText - Original OCR text (for fallback if needed)
+   * @param {string} reason - Reason for switching to OpenRouter (for logging)
+   * @returns {Promise<object|null>} Parsed result or null if OpenRouter not available
+   */
+  async tryOpenRouter(prompt, rawText, reason = 'fallback') {
+    try {
+      console.log('\n🚦 Attempting OpenRouter fallback...', `Reason: ${reason}`);
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        console.log('❌ OPENROUTER_API_KEY not set. Skipping OpenRouter fallback.');
+        return null;
+      }
+
+      // Dynamic import to support ESM-only SDK in CommonJS project
+      const { OpenRouter } = await import('@openrouter/sdk');
+
+      const openRouter = new OpenRouter({
+        apiKey,
+        defaultHeaders: {
+          'HTTP-Referer': process.env.OPENROUTER_SITE_URL || 'http://localhost',
+          'X-Title': process.env.OPENROUTER_SITE_NAME || 'Invoice Hub',
+        },
+      });
+
+      const model = process.env.OPENROUTER_MODEL || 'tngtech/deepseek-r1t2-chimera:free';
+      console.log(`🧠 OpenRouter model: ${model}`);
+
+      const completion = await openRouter.chat.send({
+        model,
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        stream: false,
+      });
+
+      const text = completion?.choices?.[0]?.message?.content;
+      if (!text) {
+        console.log('❌ OpenRouter returned no content');
+        return null;
+      }
+
+      console.log('📩 OpenRouter response received. Parsing...');
+      const parsed = this.parseAIResponse(text);
+      // Mark source as openrouter for visibility
+      parsed.source = 'openrouter';
+      console.log('✅ OpenRouter fallback successful');
+      return parsed;
+    } catch (e) {
+      console.log('❌ OpenRouter fallback failed:', e.message);
+      return null;
     }
   }
 
