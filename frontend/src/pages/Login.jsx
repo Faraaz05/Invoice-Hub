@@ -130,7 +130,6 @@ const Login = () => {
               Email Address
             </label>
             <div className="form-input-wrapper">
-              <Mail size={18} className="form-input-icon" />
               <input
                 type="email"
                 id="email"
@@ -150,7 +149,6 @@ const Login = () => {
               Password
             </label>
             <div className="form-input-wrapper">
-              <Lock size={18} className="form-input-icon" />
               <input
                 type="password"
                 id="password"

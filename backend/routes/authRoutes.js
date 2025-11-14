@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, getProfile, getManagersByDepartment, getAllUsers } = require('../controllers/authController');
+const { registerUser, loginUser, getProfile, getManagersByDepartment, getAllUsers, deleteUser } = require('../controllers/authController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -15,6 +15,9 @@ router.get('/profile', protect, getProfile);
 
 // Get all users (admin only)
 router.get('/users', protect, adminOnly, getAllUsers);
+
+// Delete user (admin only)
+router.delete('/users/:id', protect, adminOnly, deleteUser);
 
 // Get managers by department (for invoice assignment)
 router.get('/managers', protect, getManagersByDepartment);

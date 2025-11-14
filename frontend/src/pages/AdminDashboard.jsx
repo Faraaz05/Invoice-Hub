@@ -4,8 +4,6 @@ import {
   UserPlus, 
   Search, 
   Filter,
-  Eye,
-  Edit3,
   Trash2,
   Shield,
   Building,
@@ -109,6 +107,29 @@ const AdminDashboard = () => {
       setError(err.response?.data?.message || 'Failed to create user');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`/api/auth/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setUsers(users.filter(user => user._id !== userId));
+        alert('User deleted successfully!');
+      } else {
+        setError(response.data.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      console.error('Delete user error:', err);
+      setError(err.response?.data?.message || 'Failed to delete user');
     }
   };
 
@@ -270,19 +291,8 @@ const AdminDashboard = () => {
                 <td>
                   <div className="action-buttons">
                     <button 
-                      className="action-btn view-btn"
-                      title="View Details"
-                    >
-                      <Eye size={14} />
-                    </button>
-                    <button 
-                      className="action-btn edit-btn"
-                      title="Edit User"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                    <button 
                       className="action-btn delete-btn"
+                      onClick={() => handleDeleteUser(user._id, user.name)}
                       title="Delete User"
                     >
                       <Trash2 size={14} />

@@ -65,18 +65,6 @@ const Dashboard = () => {
                   <p>Create and manage user accounts across all roles and departments.</p>
                   <a href="/users" className="action-link">Manage Users →</a>
                 </div>
-                
-                <div className="quick-action-card">
-                  <h3>System Reports</h3>
-                  <p>View comprehensive reports and analytics across the system.</p>
-                  <a href="/reports" className="action-link">View Reports →</a>
-                </div>
-                
-                <div className="quick-action-card">
-                  <h3>System Settings</h3>
-                  <p>Configure system-wide settings and preferences.</p>
-                  <a href="/settings" className="action-link">System Settings →</a>
-                </div>
               </div>
             </div>
           </section>
