@@ -83,7 +83,7 @@ After applying any solution:
 
 ## 🔍 CURRENT API KEY STATUS
 
-Your current key: `AIzaSyBymoNBzb6KW_W2qzatW0AIWehIGmD2OMo`
+Your current key: ``
 
 **Possible Issues:**
 - ❌ Shared/public key (overused)
